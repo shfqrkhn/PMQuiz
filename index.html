@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" href="app.js" as="script">
-    <link rel="preload" href="json-worker.js" as="worker">
+    <link rel="preload" href="json-worker.js" as="script">
     <style>
         :root {
             /* Light Mode Variables (Default) */
@@ -335,6 +335,15 @@
             content-visibility: auto;
             contain-intrinsic-size: 1px 300px;
         }
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, ::before, ::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
     <meta name="description" content="Free project management certification exam practice with quizzes covering all 8 performance domains. Study offline with timed questions and detailed explanations.">
     <link rel="manifest" href="./manifest.webmanifest">
@@ -480,7 +489,7 @@
             <button id="restartQuizBtnReview" class="btn btn-primary mt-4 w-100">Take New Quiz</button> </section>
     </main>
 
-    <footer class="text-center mt-4 mb-4 text-muted small">v1.3.17</footer>
+    <footer class="text-center mt-4 mb-4 text-muted small">v1.3.18</footer>
 
     <script src="app.js"></script>
 </body>
