@@ -87,7 +87,7 @@ class QuizManager {
                     Object.assign(reconstructed, data);
                 } else if (type === 'chunk') {
                     if (reconstructed.questions) {
-                        reconstructed.questions.push(...data);
+                        reconstructed.questions.push.apply(reconstructed.questions, data);
                     }
                 } else if (type === 'done') {
                     cleanup();
