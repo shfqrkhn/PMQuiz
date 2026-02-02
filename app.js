@@ -499,7 +499,6 @@ class QuizManager {
                 this.currentQuestionIndex = 0;
                 this.score = 0;
                 this.userAnswers = [];
-                this.isTimerPaused = false;
                 this._updateCurrentScoreDisplay();
                 this._showQuestion();
             }

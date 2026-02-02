@@ -1,3 +1,3 @@
 # PM Certification Quiz - Free Practice Questions
 
-![Version](https://img.shields.io/badge/version-v1.3.19-blue)
+![Version](https://img.shields.io/badge/version-v1.3.20-blue)
