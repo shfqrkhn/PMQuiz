@@ -459,12 +459,8 @@ class QuizManager {
                     if (q.choices.some(choice => typeof choice !== 'string' || !choice.trim())) {
                          throw new Error(`Question ${qNum}: All choices must be non-empty strings.`);
                     }
-                    // Sentinel: Detect duplicate choices which confuse users
-                    const uniqueChoices = new Set();
-                    for (const choice of q.choices) {
-                        uniqueChoices.add(choice.trim());
-                    }
-                    if (uniqueChoices.size !== q.choices.length) {
+                    // Sentinel: Detect duplicate choices which confuse users (Optimized)
+                    if (new Set(q.choices).size !== q.choices.length) {
                         throw new Error(`Question ${qNum}: Duplicate choices detected.`);
                     }
 
