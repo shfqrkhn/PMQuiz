@@ -19,8 +19,13 @@ self.addEventListener('install', event => {
 });
 
 // Helper to limit cache size (LRU)
-async function trimCache(cacheName, maxItems) {
-  const cache = await caches.open(cacheName);
+async function trimCache(cacheNameOrInstance, maxItems) {
+  let cache;
+  if (typeof cacheNameOrInstance === 'string') {
+    cache = await caches.open(cacheNameOrInstance);
+  } else {
+    cache = cacheNameOrInstance;
+  }
   const keys = await cache.keys();
   if (keys.length > maxItems) {
     const keysToDelete = keys.slice(0, keys.length - maxItems);
@@ -51,7 +56,7 @@ self.addEventListener('fetch', event => {
         if (networkResponse && networkResponse.status === 200) {
           event.waitUntil(
             cache.put(event.request.url, networkResponse.clone()).then(() => {
-              trimCache('selfquiz-data-v1', 10);
+              trimCache(cache, 10);
             })
           );
         }
@@ -74,7 +79,7 @@ self.addEventListener('fetch', event => {
         if (networkResponse && networkResponse.status === 200) {
           event.waitUntil(
             cache.put(event.request.url, networkResponse.clone()).then(() => {
-              trimCache('selfquiz-fonts-v1', 5);
+              trimCache(cache, 5);
             })
           );
         }
