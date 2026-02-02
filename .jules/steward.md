@@ -37,3 +37,7 @@
 ## 2026-01-28 - [Palette] - Mobile Physics
 **Insight:** Default touch interactions on mobile browsers often include a 300ms delay to detect double-taps, making rapid UI interactions feel sluggish and causing unintended zooming.
 **Protocol:** All interactive elements (buttons, inputs) must explicitly set `touch-action: manipulation` to disable double-tap zooming and ensure instant response.
+
+## 2026-01-29 - [Bolt] - Self-Contained Content
+**Insight:** Reliance on external URLs (even within the same repo) for core content prevents offline access via Service Workers and breaks fork portability.
+**Protocol:** All core application content must be referenced via relative paths to ensure it is served from the same origin and cacheable.

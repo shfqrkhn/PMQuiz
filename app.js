@@ -15,35 +15,35 @@ const QUIZ_CONFIG = Object.freeze({
     QUESTION_BANKS: [
         {
             name: "Stakeholder Performance Domain",
-            url: "https://raw.githubusercontent.com/shfqrkhn/SelfQuiz/refs/heads/main/QuestionBanks/PMP_1_StakeholderPerformance.json"
+            url: "QuestionBanks/PMP_1_StakeholderPerformance.json"
         },
         {
             name: "Team Performance Domain",
-            url: "https://raw.githubusercontent.com/shfqrkhn/SelfQuiz/refs/heads/main/QuestionBanks/PMP_2_TeamPerformance.json"
+            url: "QuestionBanks/PMP_2_TeamPerformance.json"
         },
         {
             name: "Development Approach & Life Cycle",
-            url: "https://raw.githubusercontent.com/shfqrkhn/SelfQuiz/refs/heads/main/QuestionBanks/PMP_3_DevelopmentApproach_and_LifeCyclePerformance.json"
+            url: "QuestionBanks/PMP_3_DevelopmentApproach_and_LifeCyclePerformance.json"
         },
         {
             name: "Planning Performance Domain",
-            url: "https://raw.githubusercontent.com/shfqrkhn/SelfQuiz/refs/heads/main/QuestionBanks/PMP_4_PlanningPerformance.json"
+            url: "QuestionBanks/PMP_4_PlanningPerformance.json"
         },
         {
             name: "Project Work Performance Domain",
-            url: "https://raw.githubusercontent.com/shfqrkhn/SelfQuiz/refs/heads/main/QuestionBanks/PMP_5_ProjectWorkPerformance.json"
+            url: "QuestionBanks/PMP_5_ProjectWorkPerformance.json"
         },
         {
             name: "Delivery Performance Domain",
-            url: "https://raw.githubusercontent.com/shfqrkhn/SelfQuiz/refs/heads/main/QuestionBanks/PMP_6_DeliveryPerformance.json"
+            url: "QuestionBanks/PMP_6_DeliveryPerformance.json"
         },
         {
             name: "Measurement Performance Domain",
-            url: "https://raw.githubusercontent.com/shfqrkhn/SelfQuiz/refs/heads/main/QuestionBanks/PMP_7_MeasurementPerformance.json"
+            url: "QuestionBanks/PMP_7_MeasurementPerformance.json"
         },
         {
             name: "Uncertainty Performance Domain",
-            url: "https://raw.githubusercontent.com/shfqrkhn/SelfQuiz/refs/heads/main/QuestionBanks/PMP_8_UncertaintyPerformance.json"
+            url: "QuestionBanks/PMP_8_UncertaintyPerformance.json"
         }
     ]
 });

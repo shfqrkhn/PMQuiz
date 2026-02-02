@@ -1,6 +1,6 @@
 # PM Certification Quiz - Free Practice Questions
 
-![Version](https://img.shields.io/badge/version-v1.3.15-blue)
+![Version](https://img.shields.io/badge/version-v1.3.16-blue)
 
 Welcome to **PM Certification Quiz**, a free, open-source study tool for project management certification exam preparation. This application provides comprehensive practice quizzes to help you prepare effectively and build confidence for your certification exam.
 
