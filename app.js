@@ -86,8 +86,12 @@ class QuizManager {
                 if (type === 'meta') {
                     Object.assign(reconstructed, data);
                 } else if (type === 'chunk') {
+                    // Optimized: Use loop to avoid stack limit and reduce overhead
                     if (reconstructed.questions) {
-                        reconstructed.questions.push.apply(reconstructed.questions, data);
+                        const questions = reconstructed.questions;
+                        for (let i = 0; i < data.length; i++) {
+                            questions.push(data[i]);
+                        }
                     }
                 } else if (type === 'done') {
                     cleanup();
