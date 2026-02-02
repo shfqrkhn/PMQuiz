@@ -61,7 +61,6 @@ class QuizManager {
         this.quizTopic = '';
         this.quizCache = new Map();
         this.isQuizActive = false;
-        this.questionMap = null;
         this.currentChoiceButtons = [];
         this.currentQuestionHeading = null;
 
@@ -422,12 +421,6 @@ class QuizManager {
         this.quizTopic = jsonData.topic || "Quiz Questions";
         this.questions = [...jsonData.questions];
         this._shuffleArray(this.questions);
-
-        // Optimization: Pre-compute map for O(1) lookup during review
-        this.questionMap = new Map();
-        for (const q of this.questions) {
-            this.questionMap.set(q.questionText, q);
-        }
 
         this._updateTotalQuestionsDisplay();
     }
@@ -792,9 +785,6 @@ class QuizManager {
                 if (this.dom.reviewQuestionsContainer) {
                     this.dom.reviewQuestionsContainer.textContent = ''; // Clear previous content
 
-                    // Using pre-computed this.questionMap for O(1) lookup.
-                    // This avoids O(N) map reconstruction on every review access.
-
                     if (this.userAnswers.length === 0) {
                         const emptyMsg = document.createElement('p');
                         emptyMsg.className = 'text-center text-muted my-4';
@@ -825,7 +815,7 @@ class QuizManager {
                 cardBody.className = 'card-body';
                 article.appendChild(cardBody);
 
-                const originalQuestion = (this.questionMap && this.questionMap.get(answerData.questionText)) || this.questions[index] || answerData;
+                const originalQuestion = this.questions[index] || answerData;
                 if (!originalQuestion || !originalQuestion.choices) {
                     const errorP = document.createElement('p');
                     errorP.className = 'text-danger';
@@ -915,7 +905,6 @@ class QuizManager {
 
                 // Reset all state variables
                 this.questions = [];
-                this.questionMap = null;
                 this.currentQuestionIndex = 0;
                 this.score = 0;
                 this.userAnswers = [];
