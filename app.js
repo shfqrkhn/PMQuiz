@@ -459,11 +459,8 @@ class QuizManager {
                     if (q.choices.some(choice => typeof choice !== 'string' || !choice.trim())) {
                          throw new Error(`Question ${qNum}: All choices must be non-empty strings.`);
                     }
-                    // Sentinel: Detect duplicate choices which confuse users
-                    const uniqueChoices = new Set();
-                    for (const choice of q.choices) {
-                        uniqueChoices.add(choice.trim());
-                    }
+                    // Sentinel: Detect duplicate choices which confuse users (Optimized)
+                    const uniqueChoices = new Set(q.choices.map(c => c.trim()));
                     if (uniqueChoices.size !== q.choices.length) {
                         throw new Error(`Question ${qNum}: Duplicate choices detected.`);
                     }
@@ -503,7 +500,6 @@ class QuizManager {
                 this.currentQuestionIndex = 0;
                 this.score = 0;
                 this.userAnswers = [];
-                this.isTimerPaused = false;
                 this._updateCurrentScoreDisplay();
                 this._showQuestion();
             }
@@ -961,18 +957,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const iconMoon = document.getElementById('iconMoon');
 
     function setTheme(mode, persist = true) {
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
         if (mode === 'dark') {
             body.classList.add('dark-mode');
             btn.setAttribute('aria-label', 'Switch to light mode');
             btn.setAttribute('aria-pressed', 'true');
             if (iconSun) iconSun.style.display = 'none';
             if (iconMoon) iconMoon.style.display = 'inline';
+            if (themeMeta) themeMeta.content = '#000000';
         } else {
             body.classList.remove('dark-mode');
             btn.setAttribute('aria-label', 'Switch to dark mode');
             btn.setAttribute('aria-pressed', 'false');
             if (iconSun) iconSun.style.display = 'inline';
             if (iconMoon) iconMoon.style.display = 'none';
+            if (themeMeta) themeMeta.content = '#f8f9fa';
         }
         if (persist) localStorage.setItem(THEME_KEY, mode);
     }
