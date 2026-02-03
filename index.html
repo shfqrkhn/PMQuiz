@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com; img-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; connect-src 'self' https://raw.githubusercontent.com; img-src 'self' data:;">
     <title>PM Certification Quiz - Free Practice</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
@@ -11,340 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" href="app.js" as="script">
     <link rel="preload" href="json-worker.js" as="script">
-    <style>
-        :root {
-            /* Light Mode Variables (Default) */
-            --primary-background: #f8f9fa;
-            --secondary-background: #fff;
-            --tertiary-background: #e9ecef;
-            --primary-text-color: #212529;
-            --secondary-text-color: #343a40;
-            --primary-purple-accent: #0a58ca;
-            --primary-purple-hover: #0b5ed7;
-            --primary-purple-active: #0a58ca;
-            --primary-purple-text: #fff;
-            --secondary-emerald-accent: #0f5132;
-            --secondary-emerald-hover: #157347;
-            --secondary-emerald-active: #146c43;
-            --secondary-emerald-text: #fff;
-            --highlight-gold-accent: #ffc107;
-            --highlight-gold-text: #212529;
-            --danger-red-accent: #dc3545;
-            --danger-red-text: #fff;
-            --focus-ring-color: #0d6efd;
-            --card-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            --bs-body-font-family: 'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif;
-        }
-        .dark-mode {
-            /* Dark Mode Variables (Override) */
-            --primary-background: #000000;
-            --secondary-background: #121212;
-            --tertiary-background: #222222;
-            --primary-text-color: #F0F0F0;
-            --secondary-text-color: #C0C0C0;
-            --primary-purple-accent: #8E24AA;
-            --primary-purple-hover: #7A1F97;
-            --primary-purple-active: #6B1B82;
-            --primary-purple-text: #F0F0F0;
-            --secondary-emerald-accent: #00695C;
-            --secondary-emerald-hover: #005c50;
-            --secondary-emerald-active: #004d43;
-            --secondary-emerald-text: #F0F0F0;
-            --highlight-gold-accent: #FFCA28;
-            --highlight-gold-text: #1A1A1A;
-            --danger-red-accent: #C62828;
-            --danger-red-text: #F0F0F0;
-            --focus-ring-color: #FFCA28;
-            --card-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        /* Specific Dark Mode Overrides */
-        .dark-mode .text-muted,
-        .dark-mode .form-text,
-        .dark-mode small,
-        .dark-mode .progress-label,
-        .dark-mode .card-title,
-        .dark-mode label,
-        .dark-mode .form-label {
-            color: var(--secondary-text-color) !important;
-            opacity: 1 !important;
-        }
-
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-
-        html, body, .dark-mode html, .dark-mode body {
-            background: var(--primary-background) !important;
-            color: var(--primary-text-color);
-            font-family: var(--bs-body-font-family);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        /* Mobile Physics: Prevent double-tap zoom on interactive elements */
-        input, select, textarea, button, label {
-            touch-action: manipulation;
-        }
-        body {
-            min-height: 100vh;
-        }
-        .quiz-container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 1rem;
-        }
-        .card {
-            background: var(--secondary-background);
-            color: var(--primary-text-color);
-            border-radius: var(--border-radius);
-            box-shadow: var(--card-shadow);
-            border: none;
-        }
-        .score-display {
-            background: var(--tertiary-background);
-            color: var(--primary-text-color);
-            border-radius: var(--border-radius);
-            padding: 10px 15px;
-            text-align: center;
-            min-width: 220px;
-            border: 1px solid var(--secondary-background);
-        }
-        .progress-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .progress-label {
-            font-weight: 600;
-            color: var(--secondary-text-color);
-        }
-        .progress {
-            background: var(--tertiary-background);
-            border-radius: 6px;
-        }
-        .progress-bar {
-            background: var(--primary-purple-accent);
-            color: var(--primary-purple-text);
-            font-weight: 600;
-            transition: transform 0.5s;
-            transform-origin: left;
-            will-change: transform;
-        }
-        .divider-text {
-            text-align: center;
-            margin: 1rem 0;
-            font-weight: 500;
-            color: var(--secondary-text-color);
-        }
-        .explanation-box {
-            background: var(--tertiary-background);
-            border-radius: var(--border-radius);
-            padding: 15px;
-            margin-top: 20px;
-            color: var(--primary-text-color);
-            box-shadow: var(--card-shadow);
-        }
-        .choice-btn {
-            background: var(--secondary-background);
-            color: var(--primary-text-color);
-            border: 1px solid var(--tertiary-background);
-            border-radius: var(--border-radius);
-            text-align: left !important;
-            padding: 0.75rem 1rem !important;
-            font-weight: 500;
-            transition: all 0.2s ease-in-out;
-            outline: none;
-            touch-action: manipulation;
-        }
-        .choice-btn:hover:not(:disabled) {
-            background: var(--primary-purple-hover);
-            color: var(--primary-purple-text);
-            transform: translateY(-2px) scale(1.01);
-        }
-        .choice-btn:active {
-            background: var(--primary-purple-active);
-            color: var(--primary-purple-text);
-        }
-        .choice-btn:focus-visible {
-            outline: 2.5px solid var(--focus-ring-color);
-            outline-offset: 2px;
-            box-shadow: 0 0 0 3px var(--focus-ring-color);
-        }
-        .choice-btn.correct-answer {
-            background: var(--secondary-emerald-accent);
-            color: var(--secondary-emerald-text);
-            border-color: var(--secondary-emerald-accent);
-        }
-        .choice-btn.incorrect-answer {
-            background: var(--danger-red-accent);
-            color: var(--danger-red-text);
-            border-color: var(--danger-red-accent);
-        }
-        .choice-btn.user-selected.incorrect-answer {
-            opacity: 0.7;
-        }
-        .btn {
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            letter-spacing: 0.02em;
-            transition: all 0.2s;
-            outline: none;
-            touch-action: manipulation;
-        }
-        .btn-primary {
-            background: var(--primary-purple-accent);
-            border-color: var(--primary-purple-accent);
-            color: var(--primary-purple-text);
-        }
-        .btn-primary:hover, .btn-primary:focus {
-            background: var(--primary-purple-hover);
-            border-color: var(--primary-purple-hover);
-            color: var(--primary-purple-text);
-        }
-        .btn-primary:active {
-            background: var(--primary-purple-active);
-            border-color: var(--primary-purple-active);
-        }
-        .btn-success {
-            background: var(--secondary-emerald-accent);
-            border-color: var(--secondary-emerald-accent);
-            color: var(--secondary-emerald-text);
-        }
-        .btn-success:hover, .btn-success:focus {
-            background: var(--secondary-emerald-hover);
-            border-color: var(--secondary-emerald-hover);
-        }
-        .btn-success:active {
-            background: var(--secondary-emerald-active);
-            border-color: var(--secondary-emerald-active);
-        }
-        .btn-info {
-            background: var(--highlight-gold-accent);
-            border-color: var(--highlight-gold-accent);
-            color: var(--highlight-gold-text);
-        }
-        .btn-info:hover, .btn-info:focus {
-            background: #ffd95a;
-            border-color: #ffd95a;
-            color: var(--highlight-gold-text);
-        }
-        .btn-info:active {
-            background: #e6b800;
-            border-color: #e6b800;
-        }
-        .btn-danger {
-            background: var(--danger-red-accent);
-            border-color: var(--danger-red-accent);
-            color: var(--danger-red-text);
-        }
-        .btn-danger:hover, .btn-danger:focus {
-            background: #b71c1c;
-            border-color: #b71c1c;
-        }
-        .btn-danger:active {
-            background: #8b1818;
-            border-color: #8b1818;
-        }
-        .loading-spinner {
-            border: 4px solid var(--tertiary-background);
-            border-top: 4px solid var(--primary-purple-accent);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .d-none { display: none !important; }
-        /* Scrollbar styling for WebKit browsers */
-        ::-webkit-scrollbar {
-            width: 10px;
-            background: var(--secondary-background);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--secondary-text-color);
-            border-radius: 6px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-purple-accent);
-        }
-        /* Headings and typography */
-        h1, h2, h3, h4, h5, h6 {
-            color: var(--primary-text-color);
-            font-weight: 700;
-            letter-spacing: 0.02em;
-        }
-        .card-title, label, .form-label, .form-text, small, .progress-label {
-            color: var(--secondary-text-color);
-        }
-        .text-muted, small, .form-text {
-            color: var(--secondary-text-color) !important;
-            opacity: 1 !important;
-        }
-        /* Accessibility: focus ring for all interactive elements */
-        button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-            outline: 2.5px solid var(--focus-ring-color) !important;
-            outline-offset: 2px !important;
-            box-shadow: 0 0 0 3px var(--focus-ring-color) !important;
-        }
-        /* Subtle border for chart elements (if any) */
-        .chart-segment {
-            stroke: var(--primary-text-color);
-            stroke-width: 1px;
-        }
-        /* Animation for fade-in */
-        .fade-in { animation: fadeInAnimation 0.2s ease-in; }
-        @keyframes fadeInAnimation { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Theme Toggle Styles */
-        /* Default (Light) */
-        #themeToggleBtn .bi {
-            color: var(--primary-purple-accent) !important;
-            transition: color 0.2s;
-        }
-        #themeToggleBtn {
-            background: var(--secondary-background) !important;
-            border: 1.5px solid var(--primary-purple-accent) !important;
-        }
-
-        /* Dark Mode Override */
-        .dark-mode #themeToggleBtn .bi {
-            color: var(--highlight-gold-accent) !important;
-        }
-        .dark-mode #themeToggleBtn {
-            background: var(--secondary-background) !important;
-            border: 1.5px solid var(--highlight-gold-accent) !important;
-        }
-
-        #themeToggleBtn:focus-visible {
-            outline: 2.5px solid var(--focus-ring-color) !important;
-            outline-offset: 2px !important;
-            box-shadow: 0 0 0 3px var(--focus-ring-color) !important;
-        }
-
-        /* Accessibility overrides for text colors to ensure WCAG AA compliance */
-        /* Default (Light Mode) */
-        .text-success { color: #146c43 !important; }
-        .text-danger { color: #b02a37 !important; }
-
-        /* Dark Mode Overrides */
-        .dark-mode .text-success { color: #66BB6A !important; }
-        .dark-mode .text-danger { color: #EF9A9A !important; }
-
-        /* Bolt Optimization: Virtualize rendering for long review lists */
-        .review-card {
-            content-visibility: auto;
-            contain-intrinsic-size: 1px 300px;
-        }
-        /* Reduced Motion */
-        @media (prefers-reduced-motion: reduce) {
-            *, ::before, ::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-                scroll-behavior: auto !important;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
     <meta name="description" content="Free project management certification exam practice with quizzes covering all 8 performance domains. Study offline with timed questions and detailed explanations.">
     <link rel="manifest" href="./manifest.webmanifest">
     <meta name="theme-color" content="#8E24AA">
@@ -371,14 +38,14 @@
     -->
 </head>
 <body>
-    <header class="d-flex align-items-center py-2 px-3" style="background:transparent;">
+    <header class="d-flex align-items-center py-2 px-3 bg-transparent">
         <div class="flex-grow-1"></div> <!-- Left spacer -->
         <h1 class="h4 mb-0">PM Certification Quiz</h1> <!-- Centered title -->
         <div class="flex-grow-1 d-flex"> <!-- Right spacer with button -->
-            <button id="themeToggleBtn" class="btn ms-auto" aria-pressed="false" aria-label="Toggle day/night mode" style="min-width:44px;">
+            <button id="themeToggleBtn" class="btn ms-auto" aria-pressed="false" aria-label="Toggle day/night mode">
                 <span id="themeToggleIcon" aria-hidden="true">
-                    <i id="iconSun" class="bi bi-sun" style="font-size:1.5rem;display:inline;"></i>
-                    <i id="iconMoon" class="bi bi-moon" style="font-size:1.5rem;display:none;"></i>
+                    <i id="iconSun" class="bi bi-sun"></i>
+                    <i id="iconMoon" class="bi bi-moon"></i>
                 </span>
             </button>
         </div>
@@ -431,8 +98,8 @@
             
             <div class="progress-container" aria-label="Quiz Progress">
                 <div class="flex-grow-1">
-                    <div class="progress mb-1" style="height: 10px;">
-                        <div id="progressBar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 100%; transform: scaleX(0);">
+                    <div class="progress mb-1 progress-sm">
+                        <div id="progressBar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                              <span class="visually-hidden">Quiz progress</span>
                         </div>
                     </div>
@@ -463,9 +130,9 @@
                         (<strong id="finalScorePercentage">0</strong>%)
                     </h4>
                 </div>
-                <div class="progress mt-3 position-relative" style="height: 25px;" aria-label="Final score percentage">
-                    <div id="finalPercentageBar" class="progress-bar" role="progressbar" style="width: 100%; transform: scaleX(0);"></div>
-                    <div id="finalPercentageText" class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" style="top: 0; left: 0; font-weight: 600; color: var(--primary-purple-text); pointer-events: none;">0%</div>
+                <div class="progress mt-3 position-relative progress-lg" aria-label="Final score percentage">
+                    <div id="finalPercentageBar" class="progress-bar" role="progressbar"></div>
+                    <div id="finalPercentageText" class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center">0%</div>
                 </div>
             </div>
             <button id="reviewBtn" class="btn btn-info mb-3 w-100">Review Answers</button>
@@ -489,7 +156,7 @@
             <button id="restartQuizBtnReview" class="btn btn-primary mt-4 w-100">Take New Quiz</button> </section>
     </main>
 
-    <footer class="text-center mt-4 mb-4 text-muted small">v1.3.22</footer>
+    <footer class="text-center mt-4 mb-4 text-muted small">v1.3.23</footer>
 
     <script src="app.js"></script>
 </body>

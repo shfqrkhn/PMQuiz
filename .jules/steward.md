@@ -41,3 +41,7 @@
 ## 2026-01-29 - [Bolt] - Self-Contained Content
 **Insight:** Reliance on external URLs (even within the same repo) for core content prevents offline access via Service Workers and breaks fork portability.
 **Protocol:** All core application content must be referenced via relative paths to ensure it is served from the same origin and cacheable.
+
+## 2026-02-03 - [Sentinel] - CSS Hygiene
+**Insight:** Inline `style` attributes block strict CSP (`style-src 'self'`). JS `element.style` manipulation does not.
+**Protocol:** Eliminate `style="..."` attributes; use utility classes or ID-based CSS rules to enable strict Content Security Policy.

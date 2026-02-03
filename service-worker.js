@@ -1,7 +1,8 @@
-const CACHE_NAME = 'selfquiz-cache-v1.3.22';
+const CACHE_NAME = 'selfquiz-cache-v1.3.23';
 const ASSETS = [
   './',
   './index.html',
+  './style.css',
   './app.js',
   './manifest.webmanifest',
   './json-worker.js',
