@@ -41,3 +41,7 @@
 ## 2026-01-29 - [Bolt] - Self-Contained Content
 **Insight:** Reliance on external URLs (even within the same repo) for core content prevents offline access via Service Workers and breaks fork portability.
 **Protocol:** All core application content must be referenced via relative paths to ensure it is served from the same origin and cacheable.
+
+## 2026-02-04 - [Sentinel] - Strict CSP & CSS Extraction
+**Insight:** Inline styles ('unsafe-inline') in CSP weaken security against XSS. Extracting all CSS to an external file enables a strict 'self' policy.
+**Protocol:** All CSS must be externalized to `style.css` (or similar) to allow `style-src 'self'` in the Content-Security-Policy.
