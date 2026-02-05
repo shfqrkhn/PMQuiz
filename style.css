@@ -55,8 +55,6 @@
     opacity: 1 !important;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-
 html, body, .dark-mode html, .dark-mode body {
     background: var(--primary-background) !important;
     color: var(--primary-text-color);

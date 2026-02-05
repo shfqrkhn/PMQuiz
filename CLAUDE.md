@@ -5,7 +5,7 @@
 **PM Certification Quiz** is a free, open-source Progressive Web App (PWA) for project management certification exam preparation. It provides practice quizzes covering all 8 PMP performance domains with offline support, timed questions, and detailed explanations.
 
 - **Live Demo**: https://shfqrkhn.github.io/PMQuiz/
-- **Current Version**: v1.3.23
+- **Current Version**: v1.3.24
 - **License**: Open Source (see LICENSE file)
 
 ## Tech Stack
@@ -167,7 +167,7 @@ No automated tests. Manual testing checklist:
 3. Update service worker cache version
 
 ### Modify Styling
-- CSS is inline in `index.html` `<style>` block
+- CSS is extracted to `style.css`
 - Use CSS custom properties (`:root` / `.dark-mode`)
 - Bootstrap utility classes available
 
@@ -189,7 +189,7 @@ No automated tests. Manual testing checklist:
 
 1. **No build system**: Changes go directly to source files
 2. **Version sync**: Always update all version locations together
-3. **Inline CSS**: Styles are in index.html, not separate CSS files
+3. **CSS**: Styles are in `style.css`
 4. **Security first**: Follow XSS prevention patterns (textContent, not innerHTML)
 5. **Accessibility**: Maintain ARIA attributes and focus management
 6. **Cache versioning**: Increment cache version when updating cached assets
