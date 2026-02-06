@@ -1,4 +1,4 @@
-const CACHE_NAME = 'selfquiz-cache-v1.3.24';
+const CACHE_NAME = 'selfquiz-cache-v1.3.25';
 const ASSETS = [
   './',
   './index.html',
@@ -45,24 +45,40 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Runtime caching for quiz data (JSON files)
+  // Navigation strategy: Return App Shell (index.html)
+  // Ensures offline access even with query parameters (e.g., ?source=pwa)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('./index.html').then(response => {
+        return response || fetch(event.request);
+      })
+    );
+    return;
+  }
+
+  // Runtime caching for quiz data (JSON files) - Stale-While-Revalidate
   if (event.request.url.endsWith('.json')) {
     event.respondWith(
       (async () => {
         const cache = await caches.open('selfquiz-data-v1');
-        const cachedResponse = await cache.match(event.request.url);
+        const cachedResponse = await cache.match(event.request);
+
+        const fetchPromise = fetch(event.request).then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+            trimCache(cache, 10);
+          }
+          return networkResponse;
+        }).catch(() => {
+          // Network failed, nothing to do
+        });
+
         if (cachedResponse) {
+          event.waitUntil(fetchPromise);
           return cachedResponse;
         }
-        const networkResponse = await fetch(event.request);
-        if (networkResponse && networkResponse.status === 200) {
-          event.waitUntil(
-            cache.put(event.request.url, networkResponse.clone()).then(() => {
-              trimCache(cache, 10);
-            })
-          );
-        }
-        return networkResponse;
+
+        return fetchPromise;
       })()
     );
     return;
