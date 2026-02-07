@@ -433,514 +433,510 @@ class QuizManager {
      * Validates the structure of the quiz JSON data.
      * @param {object} jsonData - The JSON data to validate.
      * @throws {Error} If validation fails.
-             */
-            _validateQuizData(jsonData) {
-                if (!jsonData || typeof jsonData !== 'object') {
-                    throw new Error('Invalid JSON: Data must be an object.');
-                }
-                if (jsonData.hasOwnProperty('topic') && typeof jsonData.topic !== 'string') {
-                    throw new Error('Invalid JSON: If "topic" is present, it must be a string.');
-                }
-                if (!Array.isArray(jsonData.questions)) {
-                    throw new Error('Invalid JSON: "questions" must be an array.');
-                }
-                if (jsonData.questions.length === 0) {
-                    throw new Error('Invalid JSON: "questions" array cannot be empty.');
-                }
+     */
+    _validateQuizData(jsonData) {
+        if (!jsonData || typeof jsonData !== 'object') {
+            throw new Error('Invalid JSON: Data must be an object.');
+        }
+        if (jsonData.hasOwnProperty('topic') && typeof jsonData.topic !== 'string') {
+            throw new Error('Invalid JSON: If "topic" is present, it must be a string.');
+        }
+        if (!Array.isArray(jsonData.questions)) {
+            throw new Error('Invalid JSON: "questions" must be an array.');
+        }
+        if (jsonData.questions.length === 0) {
+            throw new Error('Invalid JSON: "questions" array cannot be empty.');
+        }
 
-                for (const [index, q] of jsonData.questions.entries()) {
-                    const qNum = index + 1;
-                    if (typeof q.questionText !== 'string' || !q.questionText.trim()) {
-                        throw new Error(`Question ${qNum}: "questionText" must be a non-empty string.`);
-                    }
-                    if (!Array.isArray(q.choices) || q.choices.length < QUIZ_CONFIG.MIN_CHOICES_PER_QUESTION) {
-                        throw new Error(`Question ${qNum}: Must have at least ${QUIZ_CONFIG.MIN_CHOICES_PER_QUESTION} choices.`);
-                    }
-                    if (q.choices.some(choice => typeof choice !== 'string' || !choice.trim())) {
-                         throw new Error(`Question ${qNum}: All choices must be non-empty strings.`);
-                    }
-                    // Sentinel: Detect duplicate choices which confuse users (Optimized)
-                    const uniqueChoices = new Set(q.choices.map(c => c.trim()));
-                    if (uniqueChoices.size !== q.choices.length) {
-                        throw new Error(`Question ${qNum}: Duplicate choices detected.`);
-                    }
-
-                    if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.choices.length) {
-                        throw new Error(`Question ${qNum}: "correctAnswer" index is invalid or out of bounds.`);
-                    }
-                    if (typeof q.explanation !== 'string' || !q.explanation.trim()) {
-                        throw new Error(`Question ${qNum}: "explanation" must be a non-empty string.`);
-                    }
-                    if (q.hasOwnProperty('time') && (typeof q.time !== 'number' || q.time <= 0)) {
-                        throw new Error(`Question ${qNum}: If "time" is present, it must be a positive number.`);
-                    }
-                }
+        for (const [index, q] of jsonData.questions.entries()) {
+            const qNum = index + 1;
+            if (typeof q.questionText !== 'string' || !q.questionText.trim()) {
+                throw new Error(`Question ${qNum}: "questionText" must be a non-empty string.`);
+            }
+            if (!Array.isArray(q.choices) || q.choices.length < QUIZ_CONFIG.MIN_CHOICES_PER_QUESTION) {
+                throw new Error(`Question ${qNum}: Must have at least ${QUIZ_CONFIG.MIN_CHOICES_PER_QUESTION} choices.`);
+            }
+            if (q.choices.some(choice => typeof choice !== 'string' || !choice.trim())) {
+                 throw new Error(`Question ${qNum}: All choices must be non-empty strings.`);
+            }
+            // Sentinel: Detect duplicate choices which confuse users (Optimized)
+            const uniqueChoices = new Set(q.choices.map(c => c.trim()));
+            if (uniqueChoices.size !== q.choices.length) {
+                throw new Error(`Question ${qNum}: Duplicate choices detected.`);
             }
 
-            /**
-             * Updates all displays of total question count.
-             */
-            _updateTotalQuestionsDisplay() {
-                const total = this.questions.length;
-                const elementsToUpdate = [
-                    this.dom.totalQuestions,
-                    this.dom.totalQuestionsDisplay,
-                    this.dom.finalTotalQuestions,
-                    this.dom.reviewTotalQuestions
-                ];
-                elementsToUpdate.forEach(el => { if (el) el.textContent = total; });
-                if (this.dom.progressBar) this.dom.progressBar.setAttribute('aria-valuemax', total || 100);
+            if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.choices.length) {
+                throw new Error(`Question ${qNum}: "correctAnswer" index is invalid or out of bounds.`);
             }
-
-            /**
-             * Starts the quiz after questions are loaded.
-             */
-            startQuiz() {
-                this.isQuizActive = true;
-                this.currentQuestionIndex = 0;
-                this.score = 0;
-                this.userAnswers = [];
-                this._updateCurrentScoreDisplay();
-                this._showQuestion();
+            if (typeof q.explanation !== 'string' || !q.explanation.trim()) {
+                throw new Error(`Question ${qNum}: "explanation" must be a non-empty string.`);
             }
+            if (q.hasOwnProperty('time') && (typeof q.time !== 'number' || q.time <= 0)) {
+                throw new Error(`Question ${qNum}: If "time" is present, it must be a positive number.`);
+            }
+        }
+    }
 
-            /**
-             * Displays the current question.
-             */
-            _showQuestion() {
-                if (this.currentQuestionIndex >= this.questions.length) {
-                    this.endQuiz();
-                    return;
+    /**
+     * Updates all displays of total question count.
+     */
+    _updateTotalQuestionsDisplay() {
+        const total = this.questions.length;
+        const elementsToUpdate = [
+            this.dom.totalQuestions,
+            this.dom.totalQuestionsDisplay,
+            this.dom.finalTotalQuestions,
+            this.dom.reviewTotalQuestions
+        ];
+        elementsToUpdate.forEach(el => { if (el) el.textContent = total; });
+        if (this.dom.progressBar) this.dom.progressBar.setAttribute('aria-valuemax', total || 100);
+    }
+
+    /**
+     * Starts the quiz after questions are loaded.
+     */
+    startQuiz() {
+        this.isQuizActive = true;
+        this.currentQuestionIndex = 0;
+        this.score = 0;
+        this.userAnswers = [];
+        this._updateCurrentScoreDisplay();
+        this._showQuestion();
+    }
+
+    /**
+     * Displays the current question.
+     */
+    _showQuestion() {
+        if (this.currentQuestionIndex >= this.questions.length) {
+            this.endQuiz();
+            return;
+        }
+        const question = this.questions[this.currentQuestionIndex];
+        this.timeLeft = question.time || QUIZ_CONFIG.DEFAULT_QUESTION_TIME;
+
+        this._startTimer();
+        this._updateProgress();
+        this._renderQuestion(question);
+        if (this.dom.currentQuestionNum) this.dom.currentQuestionNum.textContent = this.currentQuestionIndex + 1;
+        if (this.dom.explanationContainer) {
+            this.dom.explanationContainer.classList.add(QUIZ_CONFIG.CSS_CLASSES.HIDDEN);
+            this.dom.explanationContainer.textContent = '';
+        }
+
+        const questionHeading = this.currentQuestionHeading;
+        if (questionHeading) {
+            questionHeading.focus();
+        }
+    }
+
+    /**
+     * Starts the timer for the current question.
+     */
+    _startTimer() {
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        if (this.dom.timer) this.dom.timer.textContent = `Time left: ${this.timeLeft}s`;
+        this.timerInterval = setInterval(() => {
+            this.timeLeft--;
+            if (this.dom.timer) this.dom.timer.textContent = `Time left: ${this.timeLeft}s`;
+            if (this.timeLeft <= 0) {
+                clearInterval(this.timerInterval);
+                this._handleTimeExpired();
+            }
+        }, QUIZ_CONFIG.TIMER_INTERVAL);
+    }
+
+    _handleTimeExpired() {
+        this.handleAnswer(-1);
+    }
+
+    /**
+     * Handles a user's answer selection.
+     * @param {number} selectedIndex - The index of the selected choice.
+     */
+    handleAnswer(selectedIndex) {
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        const question = this.questions[this.currentQuestionIndex];
+
+        // Sentinel: Validate index to prevent out-of-bounds errors
+        if (selectedIndex !== -1 && (selectedIndex < 0 || selectedIndex >= question.choices.length)) {
+            console.error("Invalid choice index:", selectedIndex);
+            return;
+        }
+
+        const isCorrect = selectedIndex === question.correctAnswer;
+
+        this.userAnswers.push({
+            selected: selectedIndex,
+            isCorrect: isCorrect
+        });
+
+        if (isCorrect) {
+            this.score++;
+        }
+        this._updateCurrentScoreDisplay();
+        this._showFeedback(selectedIndex, isCorrect, question);
+    }
+
+    /**
+     * Shows feedback (correct/incorrect) and explanation.
+     * @param {number} selectedIndex - The user's selected answer index.
+     * @param {boolean} isCorrect - Whether the answer was correct.
+     * @param {object} question - The current question object.
+     */
+    _showFeedback(selectedIndex, isCorrect, question) {
+        const buttons = this.currentChoiceButtons || [];
+        buttons.forEach((btn, index) => {
+            btn.disabled = true;
+            if (index === question.correctAnswer) {
+                btn.classList.add(QUIZ_CONFIG.CSS_CLASSES.CORRECT_ANSWER);
+            } else {
+                btn.classList.add(QUIZ_CONFIG.CSS_CLASSES.INCORRECT_ANSWER);
+                if (index === selectedIndex) {
+                    btn.classList.add(QUIZ_CONFIG.CSS_CLASSES.USER_SELECTED);
                 }
-                const question = this.questions[this.currentQuestionIndex];
-                this.timeLeft = question.time || QUIZ_CONFIG.DEFAULT_QUESTION_TIME;
+            }
+        });
 
-                this._startTimer();
-                this._updateProgress();
-                this._renderQuestion(question);
-                if (this.dom.currentQuestionNum) this.dom.currentQuestionNum.textContent = this.currentQuestionIndex + 1;
-                if (this.dom.explanationContainer) {
-                    this.dom.explanationContainer.classList.add(QUIZ_CONFIG.CSS_CLASSES.HIDDEN);
-                    this.dom.explanationContainer.textContent = '';
-                }
+        let feedbackHeadingText = '';
+        if (selectedIndex === -1) feedbackHeadingText = 'Time Expired!';
+        else if (isCorrect) feedbackHeadingText = 'Correct!';
+        else feedbackHeadingText = 'Incorrect.';
 
-                const questionHeading = this.currentQuestionHeading;
-                if (questionHeading) {
-                    questionHeading.focus();
-                }
+        if (this.dom.explanationContainer) {
+            this.dom.explanationContainer.textContent = ''; // Clear previous content
+
+            const heading = document.createElement('h5');
+            heading.className = 'h6';
+            heading.id = 'feedbackHeading';
+            heading.tabIndex = -1;
+            heading.textContent = feedbackHeadingText;
+            this.dom.explanationContainer.appendChild(heading);
+
+            if (!isCorrect) {
+                const correctAnswerText = question.choices[question.correctAnswer];
+                const correctAnswerLabel = String.fromCharCode(QUIZ_CONFIG.CHAR_CODE_A + question.correctAnswer);
+
+                const correctP = document.createElement('p');
+                correctP.className = 'text-success fw-bold mb-2';
+                correctP.textContent = `Correct Answer: ${correctAnswerLabel}. ${correctAnswerText}`;
+                this.dom.explanationContainer.appendChild(correctP);
             }
 
-            /**
-             * Starts the timer for the current question.
-             */
-            _startTimer() {
-                if (this.timerInterval) clearInterval(this.timerInterval);
-                if (this.dom.timer) this.dom.timer.textContent = `Time left: ${this.timeLeft}s`;
-                this.timerInterval = setInterval(() => {
-                    this.timeLeft--;
-                    if (this.dom.timer) this.dom.timer.textContent = `Time left: ${this.timeLeft}s`;
-                    if (this.timeLeft <= 0) {
-                        clearInterval(this.timerInterval);
-                        this._handleTimeExpired();
-                    }
-                }, QUIZ_CONFIG.TIMER_INTERVAL);
+            const explanationP = document.createElement('p');
+            explanationP.textContent = question.explanation;
+            this.dom.explanationContainer.appendChild(explanationP);
+
+            const continueBtn = document.createElement('button');
+            continueBtn.id = 'continueBtn';
+            continueBtn.className = 'btn btn-primary mt-2';
+            continueBtn.textContent = 'Continue';
+            continueBtn.onclick = () => this.nextQuestion();
+            this.dom.explanationContainer.appendChild(continueBtn);
+
+            this.dom.explanationContainer.classList.remove(QUIZ_CONFIG.CSS_CLASSES.HIDDEN);
+
+            // Focus the heading so screen reader users hear the result first
+            heading.focus();
+        }
+    }
+
+    /**
+     * Updates the current score and percentage display.
+     */
+    _updateCurrentScoreDisplay() {
+        const totalQuestions = this.questions.length;
+        const percentage = totalQuestions > 0 ? Math.round((this.score / totalQuestions) * 100) : 0;
+        if (this.dom.currentScoreValue) this.dom.currentScoreValue.textContent = this.score;
+        if (this.dom.currentScorePercentage) this.dom.currentScorePercentage.textContent = percentage;
+    }
+
+    /**
+     * Moves to the next question or ends the quiz.
+     */
+    nextQuestion() {
+        this.currentQuestionIndex++;
+        if (this.currentQuestionIndex < this.questions.length) {
+            this._showQuestion();
+        } else {
+            this.endQuiz();
+        }
+    }
+
+    /**
+     * Ends the current quiz and shows results.
+     */
+    endQuiz() {
+        this.isQuizActive = false;
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        this._showSection(this.dom.resultsSection);
+        if (this.dom.resultsSection) this.dom.resultsSection.focus();
+
+        const total = this.questions.length;
+        const percentage = total > 0 ? Math.round((this.score / total) * 100) : 0;
+
+        if (this.dom.finalScoreValue) this.dom.finalScoreValue.textContent = this.score;
+        if (this.dom.finalScorePercentage) this.dom.finalScorePercentage.textContent = percentage;
+
+        if (this.dom.finalPercentageBar) {
+            this.dom.finalPercentageBar.style.transform = `scaleX(${percentage / 100})`;
+            this.dom.finalPercentageBar.setAttribute('aria-valuenow', percentage);
+        }
+        if (this.dom.finalPercentageText) {
+            this.dom.finalPercentageText.textContent = `${percentage}%`;
+        }
+    }
+
+    /**
+     * Renders the current question and its choices.
+     * @param {object} question - The question object to render.
+     */
+    _renderQuestion(question) {
+        this.currentQuestionHeading = null;
+        if (!question || !question.choices) {
+            console.error("Attempted to render invalid question:", question);
+            if (this.dom.questionContainer) {
+                this.dom.questionContainer.textContent = '';
+                const errorP = document.createElement('p');
+                errorP.className = 'text-danger';
+                errorP.textContent = "Error: Could not load question.";
+                this.dom.questionContainer.appendChild(errorP);
             }
+            return;
+        }
 
-            _handleTimeExpired() {
-                this.handleAnswer(-1);
+        if (this.dom.questionContainer) {
+            this.dom.questionContainer.textContent = ''; // Clear previous content
+            const fragment = document.createDocumentFragment();
+
+            // Create heading
+            const heading = document.createElement('h4');
+            heading.className = 'mb-4 h5';
+            heading.id = 'questionTextLabel';
+            heading.tabIndex = -1;
+            heading.textContent = question.questionText;
+            this.currentQuestionHeading = heading;
+            fragment.appendChild(heading);
+
+            // Create choices container
+            const choicesContainer = document.createElement('div');
+            choicesContainer.className = 'row g-3';
+            choicesContainer.setAttribute('role', 'group');
+            choicesContainer.setAttribute('aria-labelledby', 'questionTextLabel');
+
+            // Create choice buttons
+            this.currentChoiceButtons = [];
+            question.choices.forEach((choice, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6';
+
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn btn btn-outline-primary w-100 p-3 mb-2';
+                btn.dataset.index = index;
+                btn.textContent = `${String.fromCharCode(QUIZ_CONFIG.CHAR_CODE_A + index)}. ${choice}`;
+
+                this.currentChoiceButtons.push(btn);
+                col.appendChild(btn);
+                choicesContainer.appendChild(col);
+            });
+
+            fragment.appendChild(choicesContainer);
+            this.dom.questionContainer.appendChild(fragment);
+
+            // Add event listeners to newly created choice buttons
+            // Optimized: Using event delegation on questionContainer instead of individual listeners
+        }
+    }
+
+
+    /**
+     * Updates the progress bar and text.
+     */
+    _updateProgress() {
+        const totalQuestions = this.questions.length;
+        const currentQNum = this.currentQuestionIndex + 1;
+        const progressPercentage = totalQuestions > 0 ? (currentQNum / totalQuestions) * 100 : 0;
+
+        if (this.dom.progressBar) {
+            this.dom.progressBar.style.transform = `scaleX(${progressPercentage / 100})`;
+            this.dom.progressBar.setAttribute('aria-valuenow', currentQNum);
+            if (this.dom.questionProgressText && this.dom.questionProgressText.textContent) {
+                 this.dom.progressBar.setAttribute('aria-valuetext', this.dom.questionProgressText.textContent);
+            } else {
+                this.dom.progressBar.setAttribute('aria-valuetext', `Question ${currentQNum} of ${totalQuestions}`);
             }
+        }
+    }
 
-            /**
-             * Handles a user's answer selection.
-             * @param {number} selectedIndex - The index of the selected choice.
-             */
-            handleAnswer(selectedIndex) {
-                if (this.timerInterval) clearInterval(this.timerInterval);
-                const question = this.questions[this.currentQuestionIndex];
+    /**
+     * Shows the review section with all answered questions.
+     */
+    showReview() {
+        this._showSection(this.dom.reviewSection);
+        if (this.dom.reviewSection) this.dom.reviewSection.focus();
 
-                // Sentinel: Validate index to prevent out-of-bounds errors
-                if (selectedIndex !== -1 && (selectedIndex < 0 || selectedIndex >= question.choices.length)) {
-                    console.error("Invalid choice index:", selectedIndex);
-                    return;
-                }
+        const total = this.questions.length;
+        const percentage = total > 0 ? Math.round((this.score / total) * 100) : 0;
 
-                const isCorrect = selectedIndex === question.correctAnswer;
+        if (this.dom.reviewScoreValue) this.dom.reviewScoreValue.textContent = this.score;
+        if (this.dom.reviewScorePercentage) this.dom.reviewScorePercentage.textContent = percentage;
 
-                this.userAnswers.push({
-                    questionText: question.questionText,
-                    choices: [...question.choices],
-                    selected: selectedIndex,
-                    correct: question.correctAnswer,
-                    explanation: question.explanation,
-                    isCorrect: isCorrect
+        if (this.dom.reviewQuestionsContainer) {
+            this.dom.reviewQuestionsContainer.textContent = ''; // Clear previous content
+
+            if (this.userAnswers.length === 0) {
+                const emptyMsg = document.createElement('p');
+                emptyMsg.className = 'text-center text-muted my-4';
+                emptyMsg.textContent = "No questions were answered.";
+                this.dom.reviewQuestionsContainer.appendChild(emptyMsg);
+            } else {
+                const fragment = document.createDocumentFragment();
+                this.userAnswers.forEach((answerData, index) => {
+                    const node = this._buildReviewQuestionNode(answerData, index);
+                    fragment.appendChild(node);
                 });
-
-                if (isCorrect) {
-                    this.score++;
-                }
-                this._updateCurrentScoreDisplay();
-                this._showFeedback(selectedIndex, isCorrect, question);
+                this.dom.reviewQuestionsContainer.appendChild(fragment);
             }
+        }
+    }
 
-            /**
-             * Shows feedback (correct/incorrect) and explanation.
-             * @param {number} selectedIndex - The user's selected answer index.
-             * @param {boolean} isCorrect - Whether the answer was correct.
-             * @param {object} question - The current question object.
-             */
-            _showFeedback(selectedIndex, isCorrect, question) {
-                const buttons = this.currentChoiceButtons || [];
-                buttons.forEach((btn, index) => {
-                    btn.disabled = true;
-                    if (index === question.correctAnswer) {
-                        btn.classList.add(QUIZ_CONFIG.CSS_CLASSES.CORRECT_ANSWER);
-                    } else {
-                        btn.classList.add(QUIZ_CONFIG.CSS_CLASSES.INCORRECT_ANSWER);
-                        if (index === selectedIndex) {
-                            btn.classList.add(QUIZ_CONFIG.CSS_CLASSES.USER_SELECTED);
-                        }
-                    }
-                });
+    /**
+     * Builds DOM element for a single question in the review section.
+     * @param {object} answerData - The user's answer data for a question.
+     * @param {number} index - The index of the question.
+     * @returns {HTMLElement} The article element for the review question.
+     */
+    _buildReviewQuestionNode(answerData, index) {
+        const article = document.createElement('article');
+        article.className = `card mb-3 review-card ${QUIZ_CONFIG.CSS_CLASSES.FADE_IN}`;
 
-                let feedbackHeadingText = '';
-                if (selectedIndex === -1) feedbackHeadingText = 'Time Expired!';
-                else if (isCorrect) feedbackHeadingText = 'Correct!';
-                else feedbackHeadingText = 'Incorrect.';
+        const cardBody = document.createElement('div');
+        cardBody.className = 'card-body';
+        article.appendChild(cardBody);
 
-                if (this.dom.explanationContainer) {
-                    this.dom.explanationContainer.textContent = ''; // Clear previous content
+const originalQuestion = this.questions[index];
+        if (!originalQuestion || !originalQuestion.choices) {
+            const errorP = document.createElement('p');
+            errorP.className = 'text-danger';
+            errorP.textContent = `Error: Review data for question ${index + 1} is incomplete.`;
+            cardBody.appendChild(errorP);
+            return article;
+        }
 
-                    const heading = document.createElement('h5');
-                    heading.className = 'h6';
-                    heading.id = 'feedbackHeading';
-                    heading.tabIndex = -1;
-                    heading.textContent = feedbackHeadingText;
-                    this.dom.explanationContainer.appendChild(heading);
+        // Question Heading
+        const heading = document.createElement('h3');
+        heading.className = 'card-title h6';
+        heading.textContent = `Question ${index + 1}`;
+        cardBody.appendChild(heading);
 
-                    if (!isCorrect) {
-                        const correctAnswerText = question.choices[question.correctAnswer];
-                        const correctAnswerLabel = String.fromCharCode(QUIZ_CONFIG.CHAR_CODE_A + question.correctAnswer);
+        // Question Text
+        const qText = document.createElement('p');
+        qText.className = 'card-text';
+qText.textContent = originalQuestion.questionText;
+        cardBody.appendChild(qText);
 
-                        const correctP = document.createElement('p');
-                        correctP.className = 'text-success fw-bold mb-2';
-                        correctP.textContent = `Correct Answer: ${correctAnswerLabel}. ${correctAnswerText}`;
-                        this.dom.explanationContainer.appendChild(correctP);
-                    }
+        // Your Answer Status
+        const selectedChoiceText = answerData.selected !== -1
+            ? (originalQuestion.choices[answerData.selected] || "Invalid selection index")
+            : "Not answered (Time out)";
 
-                    const explanationP = document.createElement('p');
-                    explanationP.textContent = question.explanation;
-                    this.dom.explanationContainer.appendChild(explanationP);
+        const answerStatusP = document.createElement('p');
 
-                    const continueBtn = document.createElement('button');
-                    continueBtn.id = 'continueBtn';
-                    continueBtn.className = 'btn btn-primary mt-2';
-                    continueBtn.textContent = 'Continue';
-                    continueBtn.onclick = () => this.nextQuestion();
-                    this.dom.explanationContainer.appendChild(continueBtn);
+        if (answerData.selected === -1) {
+             answerStatusP.className = 'text-danger';
+             answerStatusP.textContent = "You ran out of time.";
+        } else {
+             if (answerData.isCorrect) answerStatusP.className = 'text-success';
+             else answerStatusP.className = 'text-danger';
+             answerStatusP.textContent = `Your answer: ${String.fromCharCode(QUIZ_CONFIG.CHAR_CODE_A + answerData.selected)}. ${selectedChoiceText}`;
+        }
+        cardBody.appendChild(answerStatusP);
 
-                    this.dom.explanationContainer.classList.remove(QUIZ_CONFIG.CSS_CLASSES.HIDDEN);
+        // Correct Answer Display
+        if (!answerData.isCorrect) {
+     const correctChoiceText = originalQuestion.choices[originalQuestion.correctAnswer] || "Invalid correct index";
+             const correctP = document.createElement('p');
+             correctP.className = 'text-success';
+     correctP.textContent = `Correct answer: ${String.fromCharCode(QUIZ_CONFIG.CHAR_CODE_A + originalQuestion.correctAnswer)}. ${correctChoiceText}`;
+             cardBody.appendChild(correctP);
+        }
 
-                    // Focus the heading so screen reader users hear the result first
-                    heading.focus();
-                }
-            }
+        // Explanation
+        const explanationP = document.createElement('p');
+        explanationP.className = 'text-muted small mt-2';
 
-            /**
-             * Updates the current score and percentage display.
-             */
-            _updateCurrentScoreDisplay() {
-                const totalQuestions = this.questions.length;
-                const percentage = totalQuestions > 0 ? Math.round((this.score / totalQuestions) * 100) : 0;
-                if (this.dom.currentScoreValue) this.dom.currentScoreValue.textContent = this.score;
-                if (this.dom.currentScorePercentage) this.dom.currentScorePercentage.textContent = percentage;
-            }
+        const em = document.createElement('em');
+em.textContent = `Explanation: ${originalQuestion.explanation}`;
+        explanationP.appendChild(em);
 
-            /**
-             * Moves to the next question or ends the quiz.
-             */
-            nextQuestion() {
-                this.currentQuestionIndex++;
-                if (this.currentQuestionIndex < this.questions.length) {
-                    this._showQuestion();
-                } else {
-                    this.endQuiz();
-                }
-            }
+        cardBody.appendChild(explanationP);
 
-            /**
-             * Ends the current quiz and shows results.
-             */
-            endQuiz() {
-                this.isQuizActive = false;
-                if (this.timerInterval) clearInterval(this.timerInterval);
-                this._showSection(this.dom.resultsSection);
-                if (this.dom.resultsSection) this.dom.resultsSection.focus();
+        return article;
+    }
 
-                const total = this.questions.length;
-                const percentage = total > 0 ? Math.round((this.score / total) * 100) : 0;
+    /**
+     * Confirms and then resets the quiz (used by end-of-quiz buttons).
+     */
+    confirmAndResetQuiz() {
+        if (window.confirm("Are you sure you want to start a new quiz? Your current results will be lost.")) {
+            this.resetQuiz();
+        }
+    }
 
-                if (this.dom.finalScoreValue) this.dom.finalScoreValue.textContent = this.score;
-                if (this.dom.finalScorePercentage) this.dom.finalScorePercentage.textContent = percentage;
+    /**
+     * Confirms and ends the quiz early.
+     */
+    confirmAndEndQuiz() {
+        if (window.confirm("Are you sure you want to finish the quiz now? Unanswered questions will not be scored.")) {
+            this.endQuiz();
+        }
+    }
 
-                if (this.dom.finalPercentageBar) {
-                    this.dom.finalPercentageBar.style.transform = `scaleX(${percentage / 100})`;
-                    this.dom.finalPercentageBar.setAttribute('aria-valuenow', percentage);
-                }
-                if (this.dom.finalPercentageText) {
-                    this.dom.finalPercentageText.textContent = `${percentage}%`;
-                }
-            }
+    /**
+     * Resets the entire quiz application to its initial state.
+     */
+    resetQuiz() {
+        this.isQuizActive = false;
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
 
-            /**
-             * Renders the current question and its choices.
-             * @param {object} question - The question object to render.
-             */
-            _renderQuestion(question) {
-                this.currentQuestionHeading = null;
-                if (!question || !question.choices) {
-                    console.error("Attempted to render invalid question:", question);
-                    if (this.dom.questionContainer) {
-                        this.dom.questionContainer.textContent = '';
-                        const errorP = document.createElement('p');
-                        errorP.className = 'text-danger';
-                        errorP.textContent = "Error: Could not load question.";
-                        this.dom.questionContainer.appendChild(errorP);
-                    }
-                    return;
-                }
+        // Reset all state variables
+        this.questions = [];
+        this.currentQuestionIndex = 0;
+        this.score = 0;
+        this.userAnswers = [];
+        this.quizTopic = '';
+        this.timeLeft = 0;
+        this.currentQuestionHeading = null;
+        this.currentChoiceButtons = null;
 
-                if (this.dom.questionContainer) {
-                    this.dom.questionContainer.textContent = ''; // Clear previous content
-                    const fragment = document.createDocumentFragment();
+        // Reset UI elements
+        this._updateCurrentScoreDisplay();
+        if (this.dom.progressBar) {
+            this.dom.progressBar.style.transform = 'scaleX(0)';
+            this.dom.progressBar.setAttribute('aria-valuenow', '0');
+        }
+        if (this.dom.currentQuestionNum) this.dom.currentQuestionNum.textContent = '0';
+        this._updateTotalQuestionsDisplay();
+        if (this.dom.timer) this.dom.timer.textContent = 'Time left: 0s';
 
-                    // Create heading
-                    const heading = document.createElement('h4');
-                    heading.className = 'mb-4 h5';
-                    heading.id = 'questionTextLabel';
-                    heading.tabIndex = -1;
-                    heading.textContent = question.questionText;
-                    this.currentQuestionHeading = heading;
-                    fragment.appendChild(heading);
+        if (this.dom.questionContainer) this.dom.questionContainer.textContent = '';
+        if (this.dom.explanationContainer) {
+            this.dom.explanationContainer.textContent = '';
+            this.dom.explanationContainer.classList.add(QUIZ_CONFIG.CSS_CLASSES.HIDDEN);
+        }
+        if (this.dom.reviewQuestionsContainer) this.dom.reviewQuestionsContainer.textContent = '';
 
-                    // Create choices container
-                    const choicesContainer = document.createElement('div');
-                    choicesContainer.className = 'row g-3';
-                    choicesContainer.setAttribute('role', 'group');
-                    choicesContainer.setAttribute('aria-labelledby', 'questionTextLabel');
+        this._setLoadError('');
+        // Reset all forms
+        if (this.dom.uploadForm) this.dom.uploadForm.reset();
+        if (this.dom.questionBankSelect) this.dom.questionBankSelect.selectedIndex = 0;
 
-                    // Create choice buttons
-                    this.currentChoiceButtons = [];
-                    question.choices.forEach((choice, index) => {
-                        const col = document.createElement('div');
-                        col.className = 'col-md-6';
-
-                        const btn = document.createElement('button');
-                        btn.className = 'choice-btn btn btn-outline-primary w-100 p-3 mb-2';
-                        btn.dataset.index = index;
-                        btn.textContent = `${String.fromCharCode(QUIZ_CONFIG.CHAR_CODE_A + index)}. ${choice}`;
-
-                        this.currentChoiceButtons.push(btn);
-                        col.appendChild(btn);
-                        choicesContainer.appendChild(col);
-                    });
-
-                    fragment.appendChild(choicesContainer);
-                    this.dom.questionContainer.appendChild(fragment);
-
-                    // Add event listeners to newly created choice buttons
-                    // Optimized: Using event delegation on questionContainer instead of individual listeners
-                }
-            }
-
-
-            /**
-             * Updates the progress bar and text.
-             */
-            _updateProgress() {
-                const totalQuestions = this.questions.length;
-                const currentQNum = this.currentQuestionIndex + 1;
-                const progressPercentage = totalQuestions > 0 ? (currentQNum / totalQuestions) * 100 : 0;
-
-                if (this.dom.progressBar) {
-                    this.dom.progressBar.style.transform = `scaleX(${progressPercentage / 100})`;
-                    this.dom.progressBar.setAttribute('aria-valuenow', currentQNum);
-                    if (this.dom.questionProgressText && this.dom.questionProgressText.textContent) {
-                         this.dom.progressBar.setAttribute('aria-valuetext', this.dom.questionProgressText.textContent);
-                    } else {
-                        this.dom.progressBar.setAttribute('aria-valuetext', `Question ${currentQNum} of ${totalQuestions}`);
-                    }
-                }
-            }
-
-            /**
-             * Shows the review section with all answered questions.
-             */
-            showReview() {
-                this._showSection(this.dom.reviewSection);
-                if (this.dom.reviewSection) this.dom.reviewSection.focus();
-
-                const total = this.questions.length;
-                const percentage = total > 0 ? Math.round((this.score / total) * 100) : 0;
-
-                if (this.dom.reviewScoreValue) this.dom.reviewScoreValue.textContent = this.score;
-                if (this.dom.reviewScorePercentage) this.dom.reviewScorePercentage.textContent = percentage;
-
-                if (this.dom.reviewQuestionsContainer) {
-                    this.dom.reviewQuestionsContainer.textContent = ''; // Clear previous content
-
-                    if (this.userAnswers.length === 0) {
-                        const emptyMsg = document.createElement('p');
-                        emptyMsg.className = 'text-center text-muted my-4';
-                        emptyMsg.textContent = "No questions were answered.";
-                        this.dom.reviewQuestionsContainer.appendChild(emptyMsg);
-                    } else {
-                        const fragment = document.createDocumentFragment();
-                        this.userAnswers.forEach((answerData, index) => {
-                            const node = this._buildReviewQuestionNode(answerData, index);
-                            fragment.appendChild(node);
-                        });
-                        this.dom.reviewQuestionsContainer.appendChild(fragment);
-                    }
-                }
-            }
-
-            /**
-             * Builds DOM element for a single question in the review section.
-             * @param {object} answerData - The user's answer data for a question.
-             * @param {number} index - The index of the question.
-             * @returns {HTMLElement} The article element for the review question.
-             */
-            _buildReviewQuestionNode(answerData, index) {
-                const article = document.createElement('article');
-                article.className = `card mb-3 review-card ${QUIZ_CONFIG.CSS_CLASSES.FADE_IN}`;
-
-                const cardBody = document.createElement('div');
-                cardBody.className = 'card-body';
-                article.appendChild(cardBody);
-
-                const originalQuestion = this.questions[index] || answerData;
-                if (!originalQuestion || !originalQuestion.choices) {
-                    const errorP = document.createElement('p');
-                    errorP.className = 'text-danger';
-                    errorP.textContent = `Error: Review data for question ${index + 1} is incomplete.`;
-                    cardBody.appendChild(errorP);
-                    return article;
-                }
-
-                // Question Heading
-                const heading = document.createElement('h3');
-                heading.className = 'card-title h6';
-                heading.textContent = `Question ${index + 1}`;
-                cardBody.appendChild(heading);
-
-                // Question Text
-                const qText = document.createElement('p');
-                qText.className = 'card-text';
-                qText.textContent = answerData.questionText;
-                cardBody.appendChild(qText);
-
-                // Your Answer Status
-                const selectedChoiceText = answerData.selected !== -1
-                    ? (originalQuestion.choices[answerData.selected] || "Invalid selection index")
-                    : "Not answered (Time out)";
-
-                const answerStatusP = document.createElement('p');
-
-                if (answerData.selected === -1) {
-                     answerStatusP.className = 'text-danger';
-                     answerStatusP.textContent = "You ran out of time.";
-                } else {
-                     if (answerData.isCorrect) answerStatusP.className = 'text-success';
-                     else answerStatusP.className = 'text-danger';
-                     answerStatusP.textContent = `Your answer: ${String.fromCharCode(QUIZ_CONFIG.CHAR_CODE_A + answerData.selected)}. ${selectedChoiceText}`;
-                }
-                cardBody.appendChild(answerStatusP);
-
-                // Correct Answer Display
-                if (!answerData.isCorrect) {
-                     const correctChoiceText = originalQuestion.choices[answerData.correct] || "Invalid correct index";
-                     const correctP = document.createElement('p');
-                     correctP.className = 'text-success';
-                     correctP.textContent = `Correct answer: ${String.fromCharCode(QUIZ_CONFIG.CHAR_CODE_A + answerData.correct)}. ${correctChoiceText}`;
-                     cardBody.appendChild(correctP);
-                }
-
-                // Explanation
-                const explanationP = document.createElement('p');
-                explanationP.className = 'text-muted small mt-2';
-
-                const em = document.createElement('em');
-                em.textContent = `Explanation: ${answerData.explanation}`;
-                explanationP.appendChild(em);
-
-                cardBody.appendChild(explanationP);
-
-                return article;
-            }
-
-            /**
-             * Confirms and then resets the quiz (used by end-of-quiz buttons).
-             */
-            confirmAndResetQuiz() {
-                if (window.confirm("Are you sure you want to start a new quiz? Your current results will be lost.")) {
-                    this.resetQuiz();
-                }
-            }
-
-            /**
-             * Confirms and ends the quiz early.
-             */
-            confirmAndEndQuiz() {
-                if (window.confirm("Are you sure you want to finish the quiz now? Unanswered questions will not be scored.")) {
-                    this.endQuiz();
-                }
-            }
-
-            /**
-             * Resets the entire quiz application to its initial state.
-             */
-            resetQuiz() {
-                this.isQuizActive = false;
-                if (this.timerInterval) {
-                    clearInterval(this.timerInterval);
-                    this.timerInterval = null;
-                }
-
-                // Reset all state variables
-                this.questions = [];
-                this.currentQuestionIndex = 0;
-                this.score = 0;
-                this.userAnswers = [];
-                this.quizTopic = '';
-                this.timeLeft = 0;
-                this.currentQuestionHeading = null;
-                this.currentChoiceButtons = null;
-
-                // Reset UI elements
-                this._updateCurrentScoreDisplay();
-                if (this.dom.progressBar) {
-                    this.dom.progressBar.style.transform = 'scaleX(0)';
-                    this.dom.progressBar.setAttribute('aria-valuenow', '0');
-                }
-                if (this.dom.currentQuestionNum) this.dom.currentQuestionNum.textContent = '0';
-                this._updateTotalQuestionsDisplay();
-                if (this.dom.timer) this.dom.timer.textContent = 'Time left: 0s';
-
-                if (this.dom.questionContainer) this.dom.questionContainer.textContent = '';
-                if (this.dom.explanationContainer) {
-                    this.dom.explanationContainer.textContent = '';
-                    this.dom.explanationContainer.classList.add(QUIZ_CONFIG.CSS_CLASSES.HIDDEN);
-                }
-                if (this.dom.reviewQuestionsContainer) this.dom.reviewQuestionsContainer.textContent = '';
-
-                this._setLoadError('');
-                // Reset all forms
-                if (this.dom.uploadForm) this.dom.uploadForm.reset();
-                if (this.dom.questionBankSelect) this.dom.questionBankSelect.selectedIndex = 0;
-
-                this._showSection(this.dom.uploadSection);
-                if (this.dom.uploadSection) this.dom.uploadSection.focus();
-            }
+        this._showSection(this.dom.uploadSection);
+        if (this.dom.uploadSection) this.dom.uploadSection.focus();
+    }
 }
 
 // --- Initialize the Quiz ---
