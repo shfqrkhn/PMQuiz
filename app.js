@@ -312,7 +312,12 @@ class QuizManager {
 
         // Check in-memory cache to prevent unnecessary network calls
         if (this.quizCache.has(sourceUrl)) {
-            this._processAndStartQuiz(this.quizCache.get(sourceUrl), sourceType);
+            // Bolt: Implement true LRU by refreshing key order (delete and re-add)
+            const data = this.quizCache.get(sourceUrl);
+            this.quizCache.delete(sourceUrl);
+            this.quizCache.set(sourceUrl, data);
+
+            this._processAndStartQuiz(data, sourceType);
             this._toggleLoadingIndicator(false);
             return;
         }
