@@ -287,7 +287,7 @@ class QuizManager {
             return;
         }
 
-        this._toggleLoadingIndicator(true);
+        this._setLoadingState(true);
         try {
             // Use worker stream instead of reading all text
             const jsonData = await this._processWithWorker(file.stream());
@@ -296,7 +296,7 @@ class QuizManager {
             this._setLoadError(`Error reading file: ${error.message}`);
             console.error("File Reading Error:", error);
         } finally {
-            this._toggleLoadingIndicator(false);
+            this._setLoadingState(false);
             if (this.dom.uploadForm) this.dom.uploadForm.reset();
         }
     }
@@ -307,7 +307,7 @@ class QuizManager {
      * @param {string} sourceType - A description of the source for error messages.
      */
     async _fetchAndProcessQuizData(sourceUrl, sourceType = "unknown") {
-        this._toggleLoadingIndicator(true);
+        this._setLoadingState(true);
         this._setLoadError('');
 
         // Check in-memory cache to prevent unnecessary network calls
@@ -318,7 +318,7 @@ class QuizManager {
             this.quizCache.set(sourceUrl, data);
 
             this._processAndStartQuiz(data, sourceType);
-            this._toggleLoadingIndicator(false);
+            this._setLoadingState(false);
             return;
         }
 
@@ -345,7 +345,7 @@ class QuizManager {
             console.error(`Error with ${sourceType}:`, error);
              this._showSection(this.dom.uploadSection); // Go back to upload on fetch error
         } finally {
-            this._toggleLoadingIndicator(false);
+            this._setLoadingState(false);
         }
     }
 
@@ -381,13 +381,25 @@ class QuizManager {
     }
 
     /**
-     * Toggles the visibility of the loading indicator.
-     * @param {boolean} show - True to show, false to hide.
+     * Sets the loading state (indicator visibility and input disabling).
+     * @param {boolean} isLoading - True if loading, false otherwise.
      */
-    _toggleLoadingIndicator(show) {
+    _setLoadingState(isLoading) {
         if (this.dom.loadingIndicator) {
-            this.dom.loadingIndicator.classList.toggle(QUIZ_CONFIG.CSS_CLASSES.HIDDEN, !show);
+            this.dom.loadingIndicator.classList.toggle(QUIZ_CONFIG.CSS_CLASSES.HIDDEN, !isLoading);
         }
+
+        const hasBanks = QUIZ_CONFIG.QUESTION_BANKS && QUIZ_CONFIG.QUESTION_BANKS.length > 0;
+
+        if (this.dom.startFromSelectBtn) {
+             this.dom.startFromSelectBtn.disabled = isLoading || !hasBanks;
+        }
+        if (this.dom.questionBankSelect) {
+             this.dom.questionBankSelect.disabled = isLoading || !hasBanks;
+        }
+
+        if (this.dom.startFromFileBtn) this.dom.startFromFileBtn.disabled = isLoading;
+        if (this.dom.jsonFile) this.dom.jsonFile.disabled = isLoading;
     }
 
     /**
