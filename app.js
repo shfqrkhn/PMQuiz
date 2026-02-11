@@ -465,11 +465,21 @@ class QuizManager {
             throw new Error('Invalid JSON: "questions" array cannot be empty.');
         }
 
+        // Sentinel: Track unique questions to prevent duplicates
+        const uniqueQuestions = new Set();
+
         for (const [index, q] of jsonData.questions.entries()) {
             const qNum = index + 1;
             if (typeof q.questionText !== 'string' || !q.questionText.trim()) {
                 throw new Error(`Question ${qNum}: "questionText" must be a non-empty string.`);
             }
+
+            // Sentinel: Detect duplicate questions
+            const questionText = q.questionText.trim();
+            if (uniqueQuestions.has(questionText)) {
+                throw new Error(`Question ${qNum}: Duplicate question text detected.`);
+            }
+            uniqueQuestions.add(questionText);
             if (!Array.isArray(q.choices) || q.choices.length < QUIZ_CONFIG.MIN_CHOICES_PER_QUESTION) {
                 throw new Error(`Question ${qNum}: Must have at least ${QUIZ_CONFIG.MIN_CHOICES_PER_QUESTION} choices.`);
             }

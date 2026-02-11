@@ -1364,7 +1364,7 @@
                 "Escalate it immediately to the project sponsor."
             ],
             "correctAnswer": 1,
-            "explanation": "In order to manage project issues effectively, it is important to assign an issue owner—the person responsible for fixing the issue—so that there is clear accountability and no ambiguity about who will resolve the issue.",
+            "explanation": "In order to manage project issues effectively, it is important to assign an issue owner\u2014the person responsible for fixing the issue\u2014so that there is clear accountability and no ambiguity about who will resolve the issue.",
             "time": 75
         },
         {
@@ -1904,7 +1904,7 @@
                 "Fist of five."
             ],
             "correctAnswer": 0,
-            "explanation": "Refactoring is the process of restructuring existing computer code—changing the factoring—without changing its external behavior. It is a key technique for reducing technical debt.",
+            "explanation": "Refactoring is the process of restructuring existing computer code\u2014changing the factoring\u2014without changing its external behavior. It is a key technique for reducing technical debt.",
             "time": 75
         },
         {
@@ -2434,18 +2434,6 @@
             "time": 75
         },
         {
-            "questionText": "What is the definition of Explicit Knowledge?",
-            "choices": [
-                "Personal experience.",
-                "Informal knowledge.",
-                "Formal, codified knowledge.",
-                "Knowledge only understood by experts."
-            ],
-            "correctAnswer": 2,
-            "explanation": "Explicit Knowledge is formal knowledge that can be codified using words, pictures, and numbers, making it easy to document and share.",
-            "time": 75
-        },
-        {
             "questionText": "Which risk response strategy for a threat involves shifting the impact to a third party?",
             "choices": [
                 "Avoid.",
@@ -2526,7 +2514,7 @@
                 "Project Management is ongoing; Portfolio Management is temporary."
             ],
             "correctAnswer": 0,
-            "explanation": "A common distinction is that Portfolio Management is about 'doing the right projects'—selecting and managing projects and programs that align with strategic objectives. Project Management is about 'doing projects right'—ensuring a specific project delivers its intended outputs within constraints. Portfolios are long-term and strategic, while projects are temporary.",
+            "explanation": "A common distinction is that Portfolio Management is about 'doing the right projects'\u2014selecting and managing projects and programs that align with strategic objectives. Project Management is about 'doing projects right'\u2014ensuring a specific project delivers its intended outputs within constraints. Portfolios are long-term and strategic, while projects are temporary.",
             "time": 75
         },
         {
