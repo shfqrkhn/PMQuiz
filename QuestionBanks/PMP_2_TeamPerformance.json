@@ -1910,18 +1910,6 @@
             "time": 75
         },
         {
-            "questionText": "What information regarding resources is typically included in the Project Charter?",
-            "choices": [
-                "Detailed resource assignments.",
-                "The resource management plan.",
-                "A list of pre-approved resources.",
-                "Resource calendars."
-            ],
-            "correctAnswer": 2,
-            "explanation": "The project charter usually contains a list of pre-approved financial and other resources that project managers can use during the planning phase.",
-            "time": 75
-        },
-        {
             "questionText": "What practice involves the entire team working together on a single user story at the same time?",
             "choices": [
                 "Pairing",
