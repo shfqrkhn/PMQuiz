@@ -974,7 +974,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Theme Toggle Logic ---
 (function() {
     const THEME_KEY = 'pm-cert-quiz-theme';
-    const body = document.body;
+    // Use documentElement to match theme.js
+    const root = document.documentElement;
     const btn = document.getElementById('themeToggleBtn');
     const iconSun = document.getElementById('iconSun');
     const iconMoon = document.getElementById('iconMoon');
@@ -982,14 +983,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function setTheme(mode, persist = true) {
         const themeMeta = document.querySelector('meta[name="theme-color"]');
         if (mode === 'dark') {
-            body.classList.add('dark-mode');
+            root.classList.add('dark-mode');
             btn.setAttribute('aria-label', 'Switch to light mode');
             btn.setAttribute('aria-pressed', 'true');
             if (iconSun) iconSun.style.display = 'none';
             if (iconMoon) iconMoon.style.display = 'inline';
             if (themeMeta) themeMeta.content = '#000000';
         } else {
-            body.classList.remove('dark-mode');
+            root.classList.remove('dark-mode');
             btn.setAttribute('aria-label', 'Switch to dark mode');
             btn.setAttribute('aria-pressed', 'false');
             if (iconSun) iconSun.style.display = 'inline';
@@ -999,16 +1000,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (persist) localStorage.setItem(THEME_KEY, mode);
     }
 
-    // On load: default to light mode (root) unless user preference is 'dark'
-    let saved = localStorage.getItem(THEME_KEY);
-    if (saved === 'dark') {
-        setTheme('dark', false);
-    } else {
-        setTheme('light', false);
-    }
+    // Initialize state based on what theme.js applied (eliminating FOUC)
+    const isDark = root.classList.contains('dark-mode');
+    setTheme(isDark ? 'dark' : 'light', false);
 
     btn.addEventListener('click', function() {
-        const isDark = body.classList.contains('dark-mode');
+        const isDark = root.classList.contains('dark-mode');
         setTheme(isDark ? 'light' : 'dark');
     });
 })();
