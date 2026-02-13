@@ -45,3 +45,7 @@
 ## 2026-02-03 - [Sentinel] - CSS Hygiene
 **Insight:** Inline `style` attributes block strict CSP (`style-src 'self'`). JS `element.style` manipulation does not.
 **Protocol:** Eliminate `style="..."` attributes; use utility classes or ID-based CSS rules to enable strict Content Security Policy.
+
+## 2026-02-05 - [Bolt] - Off-Main-Thread Validation
+**Insight:** Performing $O(N)$ data validation on the main thread during file upload causes UI freezes for large datasets, degrading user experience.
+**Protocol:** All intensive data validation logic must be offloaded to Web Workers, preventing main-thread blocking while maintaining strict data integrity checks.

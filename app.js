@@ -118,7 +118,10 @@ class QuizManager {
             this.worker.postMessage({
                 type: 'processStream',
                 stream: stream,
-                limit: QUIZ_CONFIG.MAX_FILE_SIZE
+                limit: QUIZ_CONFIG.MAX_FILE_SIZE,
+                config: {
+                    minChoices: QUIZ_CONFIG.MIN_CHOICES_PER_QUESTION
+                }
             }, [stream]);
         });
     }
@@ -452,55 +455,15 @@ class QuizManager {
      * @throws {Error} If validation fails.
      */
     _validateQuizData(jsonData) {
+        // Bolt: Minimal validation on main thread. Deep validation is offloaded to json-worker.js.
         if (!jsonData || typeof jsonData !== 'object') {
             throw new Error('Invalid JSON: Data must be an object.');
-        }
-        if (jsonData.hasOwnProperty('topic') && typeof jsonData.topic !== 'string') {
-            throw new Error('Invalid JSON: If "topic" is present, it must be a string.');
         }
         if (!Array.isArray(jsonData.questions)) {
             throw new Error('Invalid JSON: "questions" must be an array.');
         }
         if (jsonData.questions.length === 0) {
             throw new Error('Invalid JSON: "questions" array cannot be empty.');
-        }
-
-        // Sentinel: Track unique questions to prevent duplicates
-        const uniqueQuestions = new Set();
-
-        for (const [index, q] of jsonData.questions.entries()) {
-            const qNum = index + 1;
-            if (typeof q.questionText !== 'string' || !q.questionText.trim()) {
-                throw new Error(`Question ${qNum}: "questionText" must be a non-empty string.`);
-            }
-
-            // Sentinel: Detect duplicate questions
-            const questionText = q.questionText.trim();
-            if (uniqueQuestions.has(questionText)) {
-                throw new Error(`Question ${qNum}: Duplicate question text detected.`);
-            }
-            uniqueQuestions.add(questionText);
-            if (!Array.isArray(q.choices) || q.choices.length < QUIZ_CONFIG.MIN_CHOICES_PER_QUESTION) {
-                throw new Error(`Question ${qNum}: Must have at least ${QUIZ_CONFIG.MIN_CHOICES_PER_QUESTION} choices.`);
-            }
-            if (q.choices.some(choice => typeof choice !== 'string' || !choice.trim())) {
-                 throw new Error(`Question ${qNum}: All choices must be non-empty strings.`);
-            }
-            // Sentinel: Detect duplicate choices which confuse users (Optimized)
-            const uniqueChoices = new Set(q.choices.map(c => c.trim()));
-            if (uniqueChoices.size !== q.choices.length) {
-                throw new Error(`Question ${qNum}: Duplicate choices detected.`);
-            }
-
-            if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.choices.length) {
-                throw new Error(`Question ${qNum}: "correctAnswer" index is invalid or out of bounds.`);
-            }
-            if (typeof q.explanation !== 'string' || !q.explanation.trim()) {
-                throw new Error(`Question ${qNum}: "explanation" must be a non-empty string.`);
-            }
-            if (q.hasOwnProperty('time') && (typeof q.time !== 'number' || q.time <= 0)) {
-                throw new Error(`Question ${qNum}: If "time" is present, it must be a positive number.`);
-            }
         }
     }
 
