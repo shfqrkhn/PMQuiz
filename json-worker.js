@@ -1,10 +1,69 @@
 /*
  * Worker for processing JSON streams off the main thread.
- * Handles reading, size limit enforcement, decoding, and parsing.
+ * Handles reading, size limit enforcement, decoding, parsing, AND validation.
  * Returns data in chunks to prevent UI blocking during transfer.
  */
+
+// Helper: Strict validation logic (moved from app.js to offload main thread)
+function validateQuizData(jsonData, config) {
+    if (!jsonData || typeof jsonData !== 'object') {
+        throw new Error('Invalid JSON: Data must be an object.');
+    }
+    if (jsonData.hasOwnProperty('topic') && typeof jsonData.topic !== 'string') {
+        throw new Error('Invalid JSON: If "topic" is present, it must be a string.');
+    }
+    if (!Array.isArray(jsonData.questions)) {
+        throw new Error('Invalid JSON: "questions" must be an array.');
+    }
+    if (jsonData.questions.length === 0) {
+        throw new Error('Invalid JSON: "questions" array cannot be empty.');
+    }
+
+    // Sentinel: Track unique questions to prevent duplicates
+    const uniqueQuestions = new Set();
+    const minChoices = (config && config.minChoices) ? config.minChoices : 2;
+
+    for (let index = 0; index < jsonData.questions.length; index++) {
+        const q = jsonData.questions[index];
+        const qNum = index + 1;
+
+        if (typeof q.questionText !== 'string' || !q.questionText.trim()) {
+            throw new Error(`Question ${qNum}: "questionText" must be a non-empty string.`);
+        }
+
+        // Sentinel: Detect duplicate questions
+        const questionText = q.questionText.trim();
+        if (uniqueQuestions.has(questionText)) {
+            throw new Error(`Question ${qNum}: Duplicate question text detected.`);
+        }
+        uniqueQuestions.add(questionText);
+
+        if (!Array.isArray(q.choices) || q.choices.length < minChoices) {
+            throw new Error(`Question ${qNum}: Must have at least ${minChoices} choices.`);
+        }
+        if (q.choices.some(choice => typeof choice !== 'string' || !choice.trim())) {
+             throw new Error(`Question ${qNum}: All choices must be non-empty strings.`);
+        }
+        // Sentinel: Detect duplicate choices which confuse users (Optimized)
+        const uniqueChoices = new Set(q.choices.map(c => c.trim()));
+        if (uniqueChoices.size !== q.choices.length) {
+            throw new Error(`Question ${qNum}: Duplicate choices detected.`);
+        }
+
+        if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.choices.length) {
+            throw new Error(`Question ${qNum}: "correctAnswer" index is invalid or out of bounds.`);
+        }
+        if (typeof q.explanation !== 'string' || !q.explanation.trim()) {
+            throw new Error(`Question ${qNum}: "explanation" must be a non-empty string.`);
+        }
+        if (q.hasOwnProperty('time') && (typeof q.time !== 'number' || q.time <= 0)) {
+            throw new Error(`Question ${qNum}: If "time" is present, it must be a positive number.`);
+        }
+    }
+}
+
 self.onmessage = async (e) => {
-    const { type, stream, limit } = e.data;
+    const { type, stream, limit, config } = e.data;
 
     if (type === 'processStream') {
         try {
@@ -34,6 +93,9 @@ self.onmessage = async (e) => {
                 }
                 throw error;
             }
+
+            // Sentinel: Validate data structure and content off-main-thread
+            validateQuizData(data, config);
 
             // Send metadata (excluding questions array)
             const { questions, ...meta } = data;
