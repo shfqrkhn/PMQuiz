@@ -10,7 +10,7 @@ const QUIZ_CONFIG = Object.freeze({
     DEFAULT_QUESTION_TIME: 60,
     MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
     CHAR_CODE_A: 65,
-    TIMER_INTERVAL: 1000,
+    TIMER_INTERVAL: 250,
     MIN_CHOICES_PER_QUESTION: 2,
     QUESTION_BANKS: [
         {
@@ -525,15 +525,32 @@ class QuizManager {
      */
     _startTimer() {
         if (this.timerInterval) clearInterval(this.timerInterval);
-        if (this.dom.timer) this.dom.timer.textContent = `Time left: ${this.timeLeft}s`;
+
+        const startTime = Date.now();
+        const duration = this.timeLeft;
+
+        this._updateTimerDisplay();
+
         this.timerInterval = setInterval(() => {
-            this.timeLeft--;
-            if (this.dom.timer) this.dom.timer.textContent = `Time left: ${this.timeLeft}s`;
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            this.timeLeft = duration - elapsed;
+
             if (this.timeLeft <= 0) {
+                this.timeLeft = 0;
+                this._updateTimerDisplay();
                 clearInterval(this.timerInterval);
                 this._handleTimeExpired();
+            } else {
+                this._updateTimerDisplay();
             }
         }, QUIZ_CONFIG.TIMER_INTERVAL);
+    }
+
+    /**
+     * Updates the timer display.
+     */
+    _updateTimerDisplay() {
+        if (this.dom.timer) this.dom.timer.textContent = `Time left: ${this.timeLeft}s`;
     }
 
     _handleTimeExpired() {
