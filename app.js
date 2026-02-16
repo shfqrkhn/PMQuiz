@@ -70,6 +70,7 @@ class QuizManager {
         this._cacheDOMElements();
         this._populateQuestionBankDropdown();
         this._bindEvents();
+        this._updateCacheStatus();
     }
 
     /**
@@ -179,6 +180,41 @@ class QuizManager {
     }
 
     /**
+     * Checks availability of question banks in the cache and updates the dropdown.
+     */
+    async _updateCacheStatus() {
+        if (!this.dom.questionBankSelect || !('caches' in window)) return;
+
+        try {
+            const isOnline = navigator.onLine;
+
+            for (const option of this.dom.questionBankSelect.options) {
+                const url = option.value;
+                if (!url) continue; // Skip default option
+
+                // Check global caches (Bolt Optimization: use caches.match to find in any cache)
+                const cachedResponse = await caches.match(url);
+                const isCached = !!cachedResponse;
+
+                // Reset text to base name first (remove previous status indicators)
+                const baseName = option.textContent.replace(/ ✓$/, '').replace(/ \(Offline\)$/, '');
+
+                let newText = baseName;
+                if (isCached) {
+                    newText += ' ✓';
+                } else if (!isOnline) {
+                    newText += ' (Offline)';
+                }
+
+                option.textContent = newText;
+                option.disabled = !isOnline && !isCached;
+            }
+        } catch (e) {
+            console.warn('Cache check failed:', e);
+        }
+    }
+
+    /**
      * Populates the question bank dropdown from the predefined list in QUIZ_CONFIG.
      */
     _populateQuestionBankDropdown() {
@@ -233,6 +269,9 @@ class QuizManager {
                 e.returnValue = '';
             }
         });
+
+        window.addEventListener('online', () => this._updateCacheStatus());
+        window.addEventListener('offline', () => this._updateCacheStatus());
 
         // Event delegation for choice buttons
         if (this.dom.questionContainer) {
