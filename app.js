@@ -188,13 +188,22 @@ class QuizManager {
         try {
             const isOnline = navigator.onLine;
 
-            for (const option of this.dom.questionBankSelect.options) {
+            // Bolt: Parallelize cache checks using Promise.all to reduce latency
+            const options = Array.from(this.dom.questionBankSelect.options);
+            const statusPromises = options.map(async (option) => {
                 const url = option.value;
-                if (!url) continue; // Skip default option
+                if (!url) return null; // Skip default option
 
-                // Check global caches (Bolt Optimization: use caches.match to find in any cache)
                 const cachedResponse = await caches.match(url);
                 const isCached = !!cachedResponse;
+                return { option, isCached };
+            });
+
+            const results = await Promise.all(statusPromises);
+
+            results.forEach(result => {
+                if (!result) return;
+                const { option, isCached } = result;
 
                 // Reset text to base name first (remove previous status indicators)
                 const baseName = option.textContent.replace(/ ✓$/, '').replace(/ \(Offline\)$/, '');
@@ -208,7 +217,7 @@ class QuizManager {
 
                 option.textContent = newText;
                 option.disabled = !isOnline && !isCached;
-            }
+            });
         } catch (e) {
             console.warn('Cache check failed:', e);
         }

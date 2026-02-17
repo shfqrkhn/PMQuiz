@@ -49,3 +49,7 @@
 ## 2026-02-05 - [Bolt] - Off-Main-Thread Validation
 **Insight:** Performing $O(N)$ data validation on the main thread during file upload causes UI freezes for large datasets, degrading user experience.
 **Protocol:** All intensive data validation logic must be offloaded to Web Workers, preventing main-thread blocking while maintaining strict data integrity checks.
+
+## 2026-02-12 - [Bolt] - Parallel I/O
+**Insight:** Sequential `await` in loops for independent I/O operations (like `caches.match`) creates unnecessary latency, especially on low-end devices.
+**Protocol:** Use `Promise.all` to parallelize independent asynchronous operations on collections to minimize total blocking time.
