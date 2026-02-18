@@ -282,6 +282,9 @@ class QuizManager {
         window.addEventListener('online', () => this._updateCacheStatus());
         window.addEventListener('offline', () => this._updateCacheStatus());
 
+        // Palette: Keyboard navigation support
+        document.addEventListener('keydown', this._handleKeyDown.bind(this));
+
         // Event delegation for choice buttons
         if (this.dom.questionContainer) {
             this.dom.questionContainer.addEventListener('click', (e) => {
@@ -290,6 +293,45 @@ class QuizManager {
                     this.handleAnswer(parseInt(button.dataset.index));
                 }
             });
+        }
+    }
+
+    /**
+     * Handles keyboard input for quiz navigation.
+     * @param {KeyboardEvent} e - The keydown event.
+     */
+    _handleKeyDown(e) {
+        if (!this.isQuizActive) return;
+
+        // If feedback is shown, allow Enter/Space to continue
+        const isFeedbackShown = this.dom.explanationContainer &&
+                               !this.dom.explanationContainer.classList.contains(QUIZ_CONFIG.CSS_CLASSES.HIDDEN);
+
+        if (isFeedbackShown) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.nextQuestion();
+            }
+            return;
+        }
+
+        // Prevent interaction if question is already answered
+        if (this.userAnswers.length > this.currentQuestionIndex) return;
+
+        // Prevent interaction if timer is stopped (time expired) but feedback not yet fully processed
+        if (this.timeLeft <= 0) return;
+
+        // Handle Choice Selection (1-9)
+        if (e.key >= '1' && e.key <= '9') {
+            const index = parseInt(e.key) - 1;
+            this.handleAnswer(index);
+            return;
+        }
+
+        // Handle Choice Selection (A-Z)
+        if (/^[a-zA-Z]$/.test(e.key)) {
+            const index = e.key.toLowerCase().charCodeAt(0) - 97; // 'a' is 97
+            this.handleAnswer(index);
         }
     }
 
