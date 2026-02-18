@@ -5,7 +5,7 @@
 **PM Certification Quiz** is a free, open-source Progressive Web App (PWA) for project management certification exam preparation. It provides practice quizzes covering all 8 PMP performance domains with offline support, timed questions, and detailed explanations.
 
 - **Live Demo**: https://shfqrkhn.github.io/PMQuiz/
-- **Current Version**: v1.3.36
+- **Current Version**: v1.3.37
 - **License**: Open Source (see LICENSE file)
 
 ## Tech Stack
