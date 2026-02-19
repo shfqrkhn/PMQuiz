@@ -71,6 +71,32 @@ class QuizManager {
         this._populateQuestionBankDropdown();
         this._bindEvents();
         this._updateCacheStatus();
+        this._handleShortcuts();
+    }
+
+    /**
+     * Handles app shortcuts from manifest (e.g., ?shortcut=upload).
+     */
+    _handleShortcuts() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shortcut = urlParams.get('shortcut');
+
+            if (shortcut === 'upload' && this.dom.jsonFile) {
+                // Use a small timeout to ensure UI is ready and transition is visible
+                setTimeout(() => {
+                    this.dom.jsonFile.focus();
+                    this.dom.jsonFile.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            } else if (shortcut === 'select' && this.dom.questionBankSelect) {
+                setTimeout(() => {
+                    this.dom.questionBankSelect.focus();
+                    this.dom.questionBankSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        } catch (e) {
+            console.warn('Shortcut handling failed:', e);
+        }
     }
 
     /**
