@@ -19,5 +19,21 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Upload Quiz",
+      "short_name": "Upload",
+      "description": "Upload a custom question bank",
+      "url": "./?shortcut=upload",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Select Bank",
+      "short_name": "Select",
+      "description": "Choose a predefined question bank",
+      "url": "./?shortcut=select",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

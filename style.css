@@ -272,11 +272,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     outline-offset: 2px !important;
     box-shadow: 0 0 0 3px var(--focus-ring-color) !important;
 }
-/* Subtle border for chart elements (if any) */
-.chart-segment {
-    stroke: var(--primary-text-color);
-    stroke-width: 1px;
-}
 /* Animation for fade-in */
 .fade-in { animation: fadeInAnimation 0.2s ease-in; }
 @keyframes fadeInAnimation { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
