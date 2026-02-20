@@ -1078,6 +1078,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setTheme(mode, persist = true) {
         const themeMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeMeta) themeMeta.removeAttribute('media');
+
         if (mode === 'dark') {
             root.classList.add('dark-mode');
             btn.setAttribute('aria-label', 'Switch to light mode');

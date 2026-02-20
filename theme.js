@@ -8,11 +8,15 @@
         // If saved is 'dark', or if no saved preference and system is dark
         if (saved === 'dark' || (!saved && systemDark)) {
             document.documentElement.classList.add('dark-mode');
+        }
 
-            // Update meta theme-color immediately to prevent navbar flash
-            // Note: This runs before body is parsed, but head elements exist
-            const meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.content = '#000000';
+        // Palette: Force meta theme-color if user has a saved preference, overriding CSS media queries
+        if (saved) {
+             const meta = document.querySelector('meta[name="theme-color"]');
+             if (meta) {
+                 meta.content = saved === 'dark' ? '#000000' : '#f8f9fa';
+                 meta.removeAttribute('media');
+             }
         }
     } catch (e) {
         // Fail silently if localStorage access is blocked or other errors occur
