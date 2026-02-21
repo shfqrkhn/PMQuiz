@@ -202,6 +202,9 @@ class QuizManager {
             reviewQuestionsContainer: document.getElementById('reviewQuestionsContainer'),
             restartQuizBtnResults: document.getElementById('restartQuizBtnResults'),
             restartQuizBtnReview: document.getElementById('restartQuizBtnReview'),
+
+            reviewFilterAll: document.getElementById('reviewFilterAll'),
+            reviewFilterIncorrect: document.getElementById('reviewFilterIncorrect'),
         };
     }
 
@@ -297,6 +300,9 @@ class QuizManager {
         if (this.dom.reviewBtn) this.dom.reviewBtn.addEventListener('click', this.showReview.bind(this));
         if (this.dom.restartQuizBtnResults) this.dom.restartQuizBtnResults.addEventListener('click', this.confirmAndResetQuiz.bind(this));
         if (this.dom.restartQuizBtnReview) this.dom.restartQuizBtnReview.addEventListener('click', this.confirmAndResetQuiz.bind(this));
+
+        if (this.dom.reviewFilterAll) this.dom.reviewFilterAll.addEventListener('click', () => this._filterReview('all'));
+        if (this.dom.reviewFilterIncorrect) this.dom.reviewFilterIncorrect.addEventListener('click', () => this._filterReview('incorrect'));
 
         window.addEventListener('beforeunload', (e) => {
             if (this.isQuizActive) {
@@ -932,6 +938,8 @@ class QuizManager {
     _buildReviewQuestionNode(answerData, index) {
         const article = document.createElement('article');
         article.className = `card mb-3 review-card ${QUIZ_CONFIG.CSS_CLASSES.FADE_IN}`;
+        // Palette: Add data attribute for filtering
+        article.dataset.isCorrect = String(answerData.isCorrect);
 
         const cardBody = document.createElement('div');
         cardBody.className = 'card-body';
@@ -995,6 +1003,43 @@ em.textContent = `Explanation: ${originalQuestion.explanation}`;
         cardBody.appendChild(explanationP);
 
         return article;
+    }
+
+    /**
+     * Filters review cards based on correctness.
+     * @param {string} mode - 'all' or 'incorrect'.
+     */
+    _filterReview(mode) {
+        if (!this.dom.reviewQuestionsContainer) return;
+
+        const cards = this.dom.reviewQuestionsContainer.querySelectorAll('.review-card');
+        cards.forEach(card => {
+            if (mode === 'all') {
+                card.classList.remove('hidden-by-filter');
+            } else if (mode === 'incorrect') {
+                const isCorrect = card.dataset.isCorrect === 'true';
+                if (isCorrect) {
+                    card.classList.add('hidden-by-filter');
+                } else {
+                    card.classList.remove('hidden-by-filter');
+                }
+            }
+        });
+
+        // Update button states
+        if (this.dom.reviewFilterAll && this.dom.reviewFilterIncorrect) {
+            if (mode === 'all') {
+                this.dom.reviewFilterAll.classList.replace('btn-outline-primary', 'btn-primary');
+                this.dom.reviewFilterAll.setAttribute('aria-pressed', 'true');
+                this.dom.reviewFilterIncorrect.classList.replace('btn-primary', 'btn-outline-primary');
+                this.dom.reviewFilterIncorrect.setAttribute('aria-pressed', 'false');
+            } else {
+                this.dom.reviewFilterAll.classList.replace('btn-primary', 'btn-outline-primary');
+                this.dom.reviewFilterAll.setAttribute('aria-pressed', 'false');
+                this.dom.reviewFilterIncorrect.classList.replace('btn-outline-primary', 'btn-primary');
+                this.dom.reviewFilterIncorrect.setAttribute('aria-pressed', 'true');
+            }
+        }
     }
 
     /**

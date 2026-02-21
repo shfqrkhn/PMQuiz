@@ -316,6 +316,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     content-visibility: auto;
     contain-intrinsic-size: 1px 300px;
 }
+.hidden-by-filter {
+    display: none !important;
+}
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
