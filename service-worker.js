@@ -1,4 +1,4 @@
-const CACHE_NAME = 'selfquiz-cache-v1.3.40';
+const CACHE_NAME = 'selfquiz-cache-v1.3.41';
 const ASSETS = [
   './',
   './index.html',
@@ -66,8 +66,12 @@ self.addEventListener('fetch', event => {
 
         const fetchPromise = fetch(event.request).then(networkResponse => {
           if (networkResponse && networkResponse.status === 200) {
-            cache.put(event.request, networkResponse.clone());
-            trimCache(cache, 10);
+            const responseToCache = networkResponse.clone();
+            const cacheUpdate = (async () => {
+              await cache.put(event.request, responseToCache);
+              await trimCache(cache, 10);
+            })();
+            event.waitUntil(cacheUpdate);
           }
           return networkResponse;
         }).catch(() => {
@@ -97,9 +101,8 @@ self.addEventListener('fetch', event => {
         const networkResponse = await fetch(event.request);
         if (networkResponse && networkResponse.status === 200) {
           event.waitUntil(
-            cache.put(event.request.url, networkResponse.clone()).then(() => {
-              trimCache(cache, 5);
-            })
+            cache.put(event.request.url, networkResponse.clone())
+              .then(() => trimCache(cache, 5))
           );
         }
         return networkResponse;
