@@ -1104,6 +1104,9 @@ em.textContent = `Explanation: ${originalQuestion.explanation}`;
 
         this._showSection(this.dom.uploadSection);
         if (this.dom.uploadSection) this.dom.uploadSection.focus();
+
+        // Palette: Update cache status to show newly cached items immediately
+        this._updateCacheStatus();
     }
 }
 

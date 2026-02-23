@@ -53,3 +53,7 @@
 ## 2026-02-12 - [Bolt] - Parallel I/O
 **Insight:** Sequential `await` in loops for independent I/O operations (like `caches.match`) creates unnecessary latency, especially on low-end devices.
 **Protocol:** Use `Promise.all` to parallelize independent asynchronous operations on collections to minimize total blocking time.
+
+## 2026-02-23 - [Palette] - Availability Feedback Loop
+**Insight:** Users expect immediate visual confirmation of data availability (e.g., "Cached ✓") after consuming content, without needing a page reload.
+**Protocol:** When a user returns to a selection menu after interacting with content, explicitly refresh availability indicators to reflect the latest state.
