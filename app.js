@@ -1125,8 +1125,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const iconMoon = document.getElementById('iconMoon');
 
     function setTheme(mode, persist = true) {
-        const themeMeta = document.querySelector('meta[name="theme-color"]');
-        if (themeMeta) themeMeta.removeAttribute('media');
+        // Palette: Consolidate multiple theme-color meta tags to prevent conflicts
+        const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
+        let themeMeta = null;
+
+        if (themeMetas.length > 0) {
+            themeMeta = themeMetas[0];
+            themeMeta.removeAttribute('media');
+            // Remove any duplicate/conflicting tags
+            for (let i = 1; i < themeMetas.length; i++) {
+                themeMetas[i].remove();
+            }
+        }
 
         if (mode === 'dark') {
             root.classList.add('dark-mode');
