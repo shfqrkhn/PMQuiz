@@ -1,4 +1,4 @@
-const CACHE_NAME = 'selfquiz-cache-v1.3.43';
+const CACHE_NAME = 'selfquiz-cache-v1.3.44';
 const ASSETS = [
   './',
   './index.html',
@@ -68,6 +68,8 @@ self.addEventListener('fetch', event => {
           if (networkResponse && networkResponse.status === 200) {
             const responseToCache = networkResponse.clone();
             const cacheUpdate = (async () => {
+              // Bolt: Delete first to ensure 'put' moves the key to the end (LRU behavior)
+              await cache.delete(event.request);
               await cache.put(event.request, responseToCache);
               await trimCache(cache, 10);
             })();
