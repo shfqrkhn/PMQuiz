@@ -366,3 +366,41 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     color: var(--primary-purple-text);
     pointer-events: none;
 }
+
+/* Print Support */
+@media print {
+    /* Reset colors for ink saving */
+    body, .card, .score-display, .explanation-box, .review-card {
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+
+    /* Hide navigation and controls */
+    header.d-flex,
+    #themeToggleBtn,
+    .btn,
+    #uploadSection,
+    .progress-container,
+    #reviewFilterControls,
+    footer {
+        display: none !important;
+    }
+
+    /* Ensure review cards don't break awkwardly */
+    .review-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+        content-visibility: visible !important;
+        contain-intrinsic-size: auto !important;
+    }
+
+    /* Expand containers */
+    .quiz-container {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
