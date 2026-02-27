@@ -41,13 +41,18 @@ function validateQuizData(jsonData, config) {
         if (!Array.isArray(q.choices) || q.choices.length < minChoices) {
             throw new Error(`Question ${qNum}: Must have at least ${minChoices} choices.`);
         }
-        if (q.choices.some(choice => typeof choice !== 'string' || !choice.trim())) {
-             throw new Error(`Question ${qNum}: All choices must be non-empty strings.`);
-        }
-        // Sentinel: Detect duplicate choices which confuse users (Optimized)
-        const uniqueChoices = new Set(q.choices.map(c => c.trim()));
-        if (uniqueChoices.size !== q.choices.length) {
-            throw new Error(`Question ${qNum}: Duplicate choices detected.`);
+
+        // Bolt: Optimized single-pass validation for choices (types, empty, duplicates)
+        const uniqueChoices = new Set();
+        for (const choice of q.choices) {
+            if (typeof choice !== 'string' || !choice.trim()) {
+                throw new Error(`Question ${qNum}: All choices must be non-empty strings.`);
+            }
+            const trimmed = choice.trim();
+            if (uniqueChoices.has(trimmed)) {
+                throw new Error(`Question ${qNum}: Duplicate choices detected.`);
+            }
+            uniqueChoices.add(trimmed);
         }
 
         if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.choices.length) {
