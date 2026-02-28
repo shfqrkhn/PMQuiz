@@ -646,26 +646,37 @@ class QuizManager {
      * Starts the timer for the current question.
      */
     _startTimer() {
-        if (this.timerInterval) clearInterval(this.timerInterval);
+        if (this.timerInterval) cancelAnimationFrame(this.timerInterval);
 
         const startTime = Date.now();
         const duration = this.timeLeft;
+        let lastUpdateTime = startTime;
 
         this._updateTimerDisplay();
 
-        this.timerInterval = setInterval(() => {
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            this.timeLeft = duration - elapsed;
+        const tick = () => {
+            const now = Date.now();
 
-            if (this.timeLeft <= 0) {
-                this.timeLeft = 0;
-                this._updateTimerDisplay();
-                clearInterval(this.timerInterval);
-                this._handleTimeExpired();
-            } else {
-                this._updateTimerDisplay();
+            if (now - lastUpdateTime >= QUIZ_CONFIG.TIMER_INTERVAL) {
+                const elapsed = Math.floor((now - startTime) / 1000);
+                this.timeLeft = duration - elapsed;
+
+                if (this.timeLeft <= 0) {
+                    this.timeLeft = 0;
+                    this._updateTimerDisplay();
+                    this.timerInterval = null;
+                    this._handleTimeExpired();
+                    return;
+                } else {
+                    this._updateTimerDisplay();
+                }
+                lastUpdateTime = now;
             }
-        }, QUIZ_CONFIG.TIMER_INTERVAL);
+
+            this.timerInterval = requestAnimationFrame(tick);
+        };
+
+        this.timerInterval = requestAnimationFrame(tick);
     }
 
     /**
@@ -684,7 +695,7 @@ class QuizManager {
      * @param {number} selectedIndex - The index of the selected choice.
      */
     handleAnswer(selectedIndex) {
-        if (this.timerInterval) clearInterval(this.timerInterval);
+        if (this.timerInterval) cancelAnimationFrame(this.timerInterval);
         const question = this.questions[this.currentQuestionIndex];
 
         // Sentinel: Validate index to prevent out-of-bounds errors
@@ -797,7 +808,7 @@ class QuizManager {
      */
     endQuiz() {
         this.isQuizActive = false;
-        if (this.timerInterval) clearInterval(this.timerInterval);
+        if (this.timerInterval) cancelAnimationFrame(this.timerInterval);
         this._showSection(this.dom.resultsSection);
         if (this.dom.resultsSection) this.dom.resultsSection.focus();
 
@@ -1066,7 +1077,7 @@ em.textContent = `Explanation: ${originalQuestion.explanation}`;
     resetQuiz() {
         this.isQuizActive = false;
         if (this.timerInterval) {
-            clearInterval(this.timerInterval);
+            cancelAnimationFrame(this.timerInterval);
             this.timerInterval = null;
         }
 
