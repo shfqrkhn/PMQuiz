@@ -57,3 +57,11 @@
 ## 2026-02-23 - [Palette] - Availability Feedback Loop
 **Insight:** Users expect immediate visual confirmation of data availability (e.g., "Cached ✓") after consuming content, without needing a page reload.
 **Protocol:** When a user returns to a selection menu after interacting with content, explicitly refresh availability indicators to reflect the latest state.
+
+## 2024-03-01 - [Palette] - CSS Variable Integrity
+**Insight:** Missing or overridden base variables in `:root` (like `--border-radius`) cause UI regression (e.g., sharp corners on components designed to be rounded).
+**Protocol:** Ensure all base variables referenced by UI components (e.g., Bootstrap cards, buttons) are strictly defined in `:root`.
+
+## 2024-03-01 - [Palette] - Button Text Wrapping
+**Insight:** Long text in buttons (especially quiz choice buttons) can overflow or get cut off on mobile devices.
+**Protocol:** Add `white-space: normal;` and `overflow-wrap: break-word;` to button classes intended to hold dynamic or long text to ensure proper wrapping on small screens.
