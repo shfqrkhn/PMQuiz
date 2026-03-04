@@ -66,7 +66,7 @@ html, body, .dark-mode html, .dark-mode body {
     -moz-osx-font-smoothing: grayscale;
 }
 /* Mobile Physics: Prevent double-tap zoom on interactive elements */
-input, select, textarea, button, label {
+a, .btn, .choice-btn, input, select, textarea, button, label {
     touch-action: manipulation;
 }
 body {
