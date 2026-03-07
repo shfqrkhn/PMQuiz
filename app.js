@@ -1132,8 +1132,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Use documentElement to match theme.js
     const root = document.documentElement;
     const btn = document.getElementById('themeToggleBtn');
-    const iconSun = document.getElementById('iconSun');
-    const iconMoon = document.getElementById('iconMoon');
 
     function setTheme(mode, persist = true) {
         // Palette: Consolidate multiple theme-color meta tags to prevent conflicts
@@ -1153,15 +1151,11 @@ document.addEventListener('DOMContentLoaded', () => {
             root.classList.add('dark-mode');
             btn.setAttribute('aria-label', 'Switch to light mode');
             btn.setAttribute('aria-pressed', 'true');
-            if (iconSun) iconSun.style.display = 'none';
-            if (iconMoon) iconMoon.style.display = 'inline';
             if (themeMeta) themeMeta.content = '#000000';
         } else {
             root.classList.remove('dark-mode');
             btn.setAttribute('aria-label', 'Switch to dark mode');
             btn.setAttribute('aria-pressed', 'false');
-            if (iconSun) iconSun.style.display = 'inline';
-            if (iconMoon) iconMoon.style.display = 'none';
             if (themeMeta) themeMeta.content = '#f8f9fa';
         }
         if (persist) localStorage.setItem(THEME_KEY, mode);
