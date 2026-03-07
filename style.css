@@ -349,6 +349,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     font-size: 1.5rem;
     display: none;
 }
+.dark-mode #iconSun {
+    display: none;
+}
+.dark-mode #iconMoon {
+    display: inline;
+}
 .progress-sm {
     height: 10px;
 }
