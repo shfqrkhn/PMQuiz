@@ -1,4 +1,4 @@
-const CACHE_NAME = 'selfquiz-cache-v1.3.52';
+const CACHE_NAME = 'selfquiz-cache-v1.3.53';
 const ASSETS = [
   './',
   './index.html',
@@ -59,52 +59,47 @@ self.addEventListener('fetch', event => {
 
   // Runtime caching for quiz data (JSON files) - Stale-While-Revalidate
   if (event.request.url.endsWith('.json')) {
-    event.respondWith(
-      (async () => {
+    const fetchPromise = fetch(event.request).then(async networkResponse => {
+      if (networkResponse && networkResponse.status === 200) {
         const cache = await caches.open('selfquiz-data-v1');
-        const cachedResponse = await cache.match(event.request);
+        const responseToCache = networkResponse.clone();
+        // Bolt: Delete first to ensure 'put' moves the key to the end (LRU behavior)
+        await cache.delete(event.request);
+        await cache.put(event.request, responseToCache);
+        await trimCache(cache, 10);
+      }
+      return networkResponse;
+    }).catch(() => {
+      // Network failed, nothing to do
+    });
 
-        const fetchPromise = fetch(event.request).then(async networkResponse => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            // Bolt: Delete first to ensure 'put' moves the key to the end (LRU behavior)
-            await cache.delete(event.request);
-            await cache.put(event.request, responseToCache);
-            await trimCache(cache, 10);
-          }
-          return networkResponse;
-        }).catch(() => {
-          // Network failed, nothing to do
-        });
+    event.waitUntil(fetchPromise);
 
-        if (cachedResponse) {
-          event.waitUntil(fetchPromise);
-          return cachedResponse;
-        }
-
-        return fetchPromise;
-      })()
+    event.respondWith(
+      caches.match(event.request).then(cachedResponse => {
+        return cachedResponse || fetchPromise;
+      })
     );
     return;
   }
 
   // Runtime caching for fonts (Cache First)
   if (event.request.destination === 'font') {
-    const fontFetchPromise = (async () => {
-      const cache = await caches.open('selfquiz-fonts-v1');
-      const cachedResponse = await cache.match(event.request.url);
+    const fontFetchPromise = caches.match(event.request.url).then(async cachedResponse => {
       if (cachedResponse) {
         return cachedResponse;
       }
       const networkResponse = await fetch(event.request);
       if (networkResponse && networkResponse.status === 200) {
+        const cache = await caches.open('selfquiz-fonts-v1');
         // Bolt: Delete first to ensure 'put' moves the key to the end (LRU behavior)
         await cache.delete(event.request.url);
         await cache.put(event.request.url, networkResponse.clone());
         await trimCache(cache, 5);
       }
       return networkResponse;
-    })();
+    });
+
     event.waitUntil(fontFetchPromise);
     event.respondWith(fontFetchPromise);
     return;
