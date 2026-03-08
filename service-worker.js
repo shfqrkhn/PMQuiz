@@ -1,4 +1,4 @@
-const CACHE_NAME = 'selfquiz-cache-v1.3.51';
+const CACHE_NAME = 'selfquiz-cache-v1.3.52';
 const ASSETS = [
   './',
   './index.html',
@@ -64,16 +64,13 @@ self.addEventListener('fetch', event => {
         const cache = await caches.open('selfquiz-data-v1');
         const cachedResponse = await cache.match(event.request);
 
-        const fetchPromise = fetch(event.request).then(networkResponse => {
+        const fetchPromise = fetch(event.request).then(async networkResponse => {
           if (networkResponse && networkResponse.status === 200) {
             const responseToCache = networkResponse.clone();
-            const cacheUpdate = (async () => {
-              // Bolt: Delete first to ensure 'put' moves the key to the end (LRU behavior)
-              await cache.delete(event.request);
-              await cache.put(event.request, responseToCache);
-              await trimCache(cache, 10);
-            })();
-            event.waitUntil(cacheUpdate);
+            // Bolt: Delete first to ensure 'put' moves the key to the end (LRU behavior)
+            await cache.delete(event.request);
+            await cache.put(event.request, responseToCache);
+            await trimCache(cache, 10);
           }
           return networkResponse;
         }).catch(() => {
@@ -93,23 +90,23 @@ self.addEventListener('fetch', event => {
 
   // Runtime caching for fonts (Cache First)
   if (event.request.destination === 'font') {
-    event.respondWith(
-      (async () => {
-        const cache = await caches.open('selfquiz-fonts-v1');
-        const cachedResponse = await cache.match(event.request.url);
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        const networkResponse = await fetch(event.request);
-        if (networkResponse && networkResponse.status === 200) {
-          event.waitUntil(
-            cache.put(event.request.url, networkResponse.clone())
-              .then(() => trimCache(cache, 5))
-          );
-        }
-        return networkResponse;
-      })()
-    );
+    const fontFetchPromise = (async () => {
+      const cache = await caches.open('selfquiz-fonts-v1');
+      const cachedResponse = await cache.match(event.request.url);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      const networkResponse = await fetch(event.request);
+      if (networkResponse && networkResponse.status === 200) {
+        // Bolt: Delete first to ensure 'put' moves the key to the end (LRU behavior)
+        await cache.delete(event.request.url);
+        await cache.put(event.request.url, networkResponse.clone());
+        await trimCache(cache, 5);
+      }
+      return networkResponse;
+    })();
+    event.waitUntil(fontFetchPromise);
+    event.respondWith(fontFetchPromise);
     return;
   }
 
