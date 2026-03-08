@@ -695,6 +695,9 @@ class QuizManager {
      * @param {number} selectedIndex - The index of the selected choice.
      */
     handleAnswer(selectedIndex) {
+        // Sentinel: Prevent double-answer state corruption and timer exploits
+        if (this.userAnswers.length > this.currentQuestionIndex) return;
+
         if (this.timerInterval) cancelAnimationFrame(this.timerInterval);
         const question = this.questions[this.currentQuestionIndex];
 
