@@ -65,3 +65,15 @@
 ## 2024-03-01 - [Palette] - Button Text Wrapping
 **Insight:** Long text in buttons (especially quiz choice buttons) can overflow or get cut off on mobile devices.
 **Protocol:** Add `white-space: normal;` and `overflow-wrap: break-word;` to button classes intended to hold dynamic or long text to ensure proper wrapping on small screens.
+
+## 2026-03-28 - [Sentinel] - Bounded Network Fetch
+**Insight:** Unbounded fetch durations and missing `response.body` handling can leave the app indefinitely loading or crashing in browsers without stream support.
+**Protocol:** All remote quiz fetches must use `AbortController` timeouts and explicitly verify stream availability before worker processing.
+
+## 2026-03-28 - [Sentinel] - Production Error Surface
+**Insight:** Logging raw error objects in production can expose stack traces and internal implementation details.
+**Protocol:** In production, log sanitized error summaries only; emit full error objects exclusively in local debug environments.
+
+## 2026-03-28 - [Bolt] - Timeout Lifecycle Hygiene
+**Insight:** Creating abort timers before cache short-circuit paths leaks timers and wastes event-loop work over repeated sessions.
+**Protocol:** Initialize fetch timeout/abort controls only when a network request will actually execute, or always clear before early returns.

@@ -48,6 +48,27 @@ const QUIZ_CONFIG = Object.freeze({
     ]
 });
 
+function isDebugMode() {
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1';
+}
+
+function reportWarning(message, error) {
+    if (isDebugMode() && error) {
+        console.warn(message, error);
+        return;
+    }
+    console.warn(message);
+}
+
+function reportError(message, error) {
+    if (isDebugMode() && error) {
+        console.error(message, error);
+        return;
+    }
+    console.error(message);
+}
+
 // --- QuizManager Class ---
 class QuizManager {
     constructor() {
@@ -95,7 +116,7 @@ class QuizManager {
                 }, 100);
             }
         } catch (e) {
-            console.warn('Shortcut handling failed:', e);
+            reportWarning('Shortcut handling failed.', e);
         }
     }
 
@@ -248,7 +269,7 @@ class QuizManager {
                 option.disabled = !isOnline && !isCached;
             });
         } catch (e) {
-            console.warn('Cache check failed:', e);
+            reportWarning('Cache check failed.', e);
         }
     }
 
@@ -419,7 +440,7 @@ class QuizManager {
             this._processAndStartQuiz(jsonData, "file upload");
         } catch (error) {
             this._setLoadError(`Error reading file: ${error.message}`);
-            console.error("File Reading Error:", error);
+            reportError('File reading error.', error);
         } finally {
             this._setLoadingState(false);
             if (this.dom.uploadForm) this.dom.uploadForm.reset();
@@ -447,10 +468,16 @@ class QuizManager {
             return;
         }
 
+        const abortController = new AbortController();
+        const fetchTimeout = setTimeout(() => abortController.abort(), 15000);
+
         try {
-            const response = await fetch(sourceUrl);
+            const response = await fetch(sourceUrl, { signal: abortController.signal });
             if (!response.ok) {
                 throw new Error(`Failed to fetch from ${sourceType}: ${response.status} ${response.statusText}`);
+            }
+            if (!response.body) {
+                throw new Error(`Failed to read ${sourceType}: streaming is unavailable in this browser`);
             }
 
             // Use Worker to process stream (handles size limit, parsing, and non-blocking return)
@@ -466,10 +493,17 @@ class QuizManager {
 
             this._processAndStartQuiz(jsonData, sourceType);
         } catch (error) {
-            this._setLoadError(`Error fetching or processing from ${sourceType}: ${error.message}`);
-            console.error(`Error with ${sourceType}:`, error);
+            const isTimeout = error && error.name === 'AbortError';
+            const errorMessage = error instanceof Error ? error.message : 'Unexpected error.';
+            const friendlyMessage = isTimeout
+                ? `Request to ${sourceType} timed out. Please try again.`
+                : `Could not load quiz from ${sourceType}. ${errorMessage}`;
+
+            this._setLoadError(friendlyMessage);
+            reportError(`Error with ${sourceType}.`, error);
              this._showSection(this.dom.uploadSection); // Go back to upload on fetch error
         } finally {
+            clearTimeout(fetchTimeout);
             this._setLoadingState(false);
         }
     }
@@ -490,7 +524,7 @@ class QuizManager {
             this.startQuiz();
         } catch (error) {
             this._setLoadError(`Error processing quiz data (from ${sourceType}): ${error.message}`);
-            console.error(`Quiz Data Processing Error (from ${sourceType}):`, error);
+            reportError(`Quiz data processing error from ${sourceType}.`, error);
              this._showSection(this.dom.uploadSection);
         }
     }
@@ -703,7 +737,7 @@ class QuizManager {
 
         // Sentinel: Validate index to prevent out-of-bounds errors
         if (selectedIndex !== -1 && (selectedIndex < 0 || selectedIndex >= question.choices.length)) {
-            console.error("Invalid choice index:", selectedIndex);
+            reportError(`Invalid choice index: ${selectedIndex}`);
             return;
         }
 
@@ -837,7 +871,7 @@ class QuizManager {
     _renderQuestion(question) {
         this.currentQuestionHeading = null;
         if (!question || !question.choices) {
-            console.error("Attempted to render invalid question:", question);
+            reportError('Attempted to render invalid question.');
             if (this.dom.questionContainer) {
                 this.dom.questionContainer.textContent = '';
                 const errorP = document.createElement('p');
