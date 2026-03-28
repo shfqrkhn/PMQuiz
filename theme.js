@@ -26,6 +26,11 @@
         }
     } catch (e) {
         // Fail silently if localStorage access is blocked or other errors occur
-        console.error('Theme initialization error:', e);
+        const host = window.location.hostname;
+        if (host === 'localhost' || host === '127.0.0.1') {
+            console.error('Theme initialization error:', e);
+        } else {
+            console.error('Theme initialization error.');
+        }
     }
 })();

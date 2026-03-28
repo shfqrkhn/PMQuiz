@@ -1424,7 +1424,7 @@ if ('serviceWorker' in navigator) {
             <button id="restartQuizBtnReview" class="btn btn-primary mt-4 w-100">Take New Quiz</button> </section>
     </main>
 
-    <footer class="text-center mt-4 mb-4 text-muted small">v1.3.53</footer>
+    <footer class="text-center mt-4 mb-4 text-muted small">v1.3.56</footer>
 
     <script src="app.js"></script>
 </body>
@@ -1571,7 +1571,7 @@ self.onmessage = async (e) => {
 - **Inclusion mode**: Full
 
 ```js
-const CACHE_NAME = 'selfquiz-cache-v1.3.53';
+const CACHE_NAME = 'selfquiz-cache-v1.3.56';
 const ASSETS = [
   './',
   './index.html',
