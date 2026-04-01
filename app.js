@@ -127,10 +127,13 @@ class QuizManager {
      */
     _processWithWorker(stream) {
         return new Promise((resolve, reject) => {
+            const taskId = Date.now().toString(36) + Math.random().toString(36).substring(2);
             const reconstructed = { questions: [] };
 
             const onMessage = (e) => {
-                const { type, data, message } = e.data;
+                const { type, data, message, taskId: responseTaskId } = e.data;
+                if (responseTaskId !== taskId) return;
+
                 if (type === 'meta') {
                     Object.assign(reconstructed, data);
                 } else if (type === 'chunk') {
@@ -165,6 +168,7 @@ class QuizManager {
 
             this.worker.postMessage({
                 type: 'processStream',
+                taskId: taskId,
                 stream: stream,
                 limit: QUIZ_CONFIG.MAX_FILE_SIZE,
                 config: {

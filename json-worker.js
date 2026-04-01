@@ -68,7 +68,7 @@ function validateQuizData(jsonData, config) {
 }
 
 self.onmessage = async (e) => {
-    const { type, stream, limit, config } = e.data;
+    const { type, stream, limit, config, taskId } = e.data;
 
     if (type === 'processStream') {
         try {
@@ -104,21 +104,21 @@ self.onmessage = async (e) => {
 
             // Send metadata (excluding questions array)
             const { questions, ...meta } = data;
-            self.postMessage({ type: 'meta', data: meta });
+            self.postMessage({ type: 'meta', taskId, data: meta });
 
             // Send questions in chunks to allow UI updates between batches
             if (questions && Array.isArray(questions)) {
                 const chunkSize = 500;
                 for (let i = 0; i < questions.length; i += chunkSize) {
                     const chunk = questions.slice(i, i + chunkSize);
-                    self.postMessage({ type: 'chunk', data: chunk });
+                    self.postMessage({ type: 'chunk', taskId, data: chunk });
                 }
             }
 
-            self.postMessage({ type: 'done' });
+            self.postMessage({ type: 'done', taskId });
 
         } catch (error) {
-            self.postMessage({ type: 'error', message: error.message });
+            self.postMessage({ type: 'error', taskId, message: error.message });
         }
     }
 };

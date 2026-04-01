@@ -77,3 +77,7 @@
 ## 2026-03-28 - [Bolt] - Timeout Lifecycle Hygiene
 **Insight:** Creating abort timers before cache short-circuit paths leaks timers and wastes event-loop work over repeated sessions.
 **Protocol:** Initialize fetch timeout/abort controls only when a network request will actually execute, or always clear before early returns.
+
+## 2024-04-12 - [Sentinel] - Worker Multiplexing
+**Insight:** Singleton Web Workers processing async streams without request IDs (`taskId`) will corrupt state if multiple operations execute concurrently.
+**Protocol:** All Web Worker message passing must include a unique transaction identifier to safely multiplex concurrent requests and prevent data race conditions.
