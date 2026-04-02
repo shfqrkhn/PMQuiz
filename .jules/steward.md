@@ -81,3 +81,7 @@
 ## 2024-04-12 - [Sentinel] - Worker Multiplexing
 **Insight:** Singleton Web Workers processing async streams without request IDs (`taskId`) will corrupt state if multiple operations execute concurrently.
 **Protocol:** All Web Worker message passing must include a unique transaction identifier to safely multiplex concurrent requests and prevent data race conditions.
+
+## 2026-04-05 - [Sentinel] - Numeric Input Type Bypasses
+**Insight:** Strict bounds checking (`< 0` or `>= length`) is insufficient if the numeric input is `NaN` or a float, which can bypass simple logic and corrupt internal state (e.g. evaluating array access as `undefined`).
+**Protocol:** Always use `Number.isInteger` for discrete index parameters and `Number.isFinite` for continuous numbers prior to bounds validation to prevent subtle state corruption or bypasses.

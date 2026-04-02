@@ -55,13 +55,13 @@ function validateQuizData(jsonData, config) {
             uniqueChoices.add(trimmed);
         }
 
-        if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.choices.length) {
+        if (!Number.isInteger(q.correctAnswer) || q.correctAnswer < 0 || q.correctAnswer >= q.choices.length) {
             throw new Error(`Question ${qNum}: "correctAnswer" index is invalid or out of bounds.`);
         }
         if (typeof q.explanation !== 'string' || !q.explanation.trim()) {
             throw new Error(`Question ${qNum}: "explanation" must be a non-empty string.`);
         }
-        if (q.hasOwnProperty('time') && (typeof q.time !== 'number' || q.time <= 0)) {
+        if (q.hasOwnProperty('time') && (!Number.isFinite(q.time) || q.time <= 0)) {
             throw new Error(`Question ${qNum}: If "time" is present, it must be a positive number.`);
         }
     }

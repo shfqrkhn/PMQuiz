@@ -739,8 +739,8 @@ class QuizManager {
         if (this.timerInterval) cancelAnimationFrame(this.timerInterval);
         const question = this.questions[this.currentQuestionIndex];
 
-        // Sentinel: Validate index to prevent out-of-bounds errors
-        if (selectedIndex !== -1 && (selectedIndex < 0 || selectedIndex >= question.choices.length)) {
+        // Sentinel: Validate index to prevent out-of-bounds errors and NaN
+        if (selectedIndex !== -1 && (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex >= question.choices.length)) {
             reportError(`Invalid choice index: ${selectedIndex}`);
             return;
         }
