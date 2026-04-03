@@ -85,3 +85,11 @@
 ## 2026-04-05 - [Sentinel] - Numeric Input Type Bypasses
 **Insight:** Strict bounds checking (`< 0` or `>= length`) is insufficient if the numeric input is `NaN` or a float, which can bypass simple logic and corrupt internal state (e.g. evaluating array access as `undefined`).
 **Protocol:** Always use `Number.isInteger` for discrete index parameters and `Number.isFinite` for continuous numbers prior to bounds validation to prevent subtle state corruption or bypasses.
+
+## 2026-05-18 - [Sentinel] - Timer Exploit Bypass
+**Insight:** Canceling a timer before fully validating user input allows users to indefinitely pause the timer by providing invalid inputs (e.g., triggering invalid keys on a keyboard event).
+**Protocol:** Any timer cancellation logic must occur *after* the provided input has been fully validated and confirmed to be a legitimate action.
+
+## 2026-05-18 - [Sentinel] - Synchronous Storage Crash
+**Insight:** Directly calling synchronous storage APIs (like `localStorage.setItem`) without a `try/catch` block will crash the entire application thread if the browser blocks storage access (e.g., due to privacy settings or incognito mode).
+**Protocol:** All synchronous storage operations must be wrapped in `try/catch` blocks to fail gracefully and prevent fatal application crashes.

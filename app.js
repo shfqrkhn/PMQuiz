@@ -736,7 +736,6 @@ class QuizManager {
         // Sentinel: Prevent double-answer state corruption and timer exploits
         if (this.userAnswers.length > this.currentQuestionIndex) return;
 
-        if (this.timerInterval) cancelAnimationFrame(this.timerInterval);
         const question = this.questions[this.currentQuestionIndex];
 
         // Sentinel: Validate index to prevent out-of-bounds errors and NaN
@@ -744,6 +743,8 @@ class QuizManager {
             reportError(`Invalid choice index: ${selectedIndex}`);
             return;
         }
+
+        if (this.timerInterval) cancelAnimationFrame(this.timerInterval);
 
         const isCorrect = selectedIndex === question.correctAnswer;
 
@@ -1199,7 +1200,13 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.setAttribute('aria-pressed', 'false');
             if (themeMeta) themeMeta.content = '#f8f9fa';
         }
-        if (persist) localStorage.setItem(THEME_KEY, mode);
+        if (persist) {
+            try {
+                localStorage.setItem(THEME_KEY, mode);
+            } catch (e) {
+                // Fail silently if localStorage is blocked
+            }
+        }
     }
 
     // Initialize state based on what theme.js applied (eliminating FOUC)
