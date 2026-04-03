@@ -1,74 +1,252 @@
 # CODEBASE.md
 
 ## Scope
-- **Apparent purpose**: Free, open-source Progressive Web App (PWA) for Project Management certification practice with timed questions, offline support, and detailed explanations.
-- **Stack/languages/frameworks**: Vanilla JS (ES6+), HTML5, CSS3, Bootstrap 5.3.0.
-- **Entry points**: `index.html` (UI), `service-worker.js` (PWA network interceptor), `app.js` (App logic).
-- **Build/run/test systems**: No build system. Client-side static files directly deployed. No automated tests.
-- **Architectural style**: Offline-first Static Web Application utilizing Web Workers for data processing and Service Workers for caching.
-- **Major operational invariants**: Client-side execution only. Strict CSP limiting origins. Strict file size limits (5MB) on JSON data fetched or uploaded.
+- **Apparent Purpose**: Provide a free, offline-capable Progressive Web App (PWA) for Project Management certification exam preparation, allowing users to take practice quizzes across all 8 PMP performance domains with timed questions, explanations, and result reviews.
+- **Stack/Languages/Frameworks**: Vanilla JavaScript (ES6+), HTML5, CSS3, Bootstrap 5.3.0, Bootstrap Icons 1.11.3.
+- **Entry Points**: `index.html` (UI shell), `app.js` (main logic wrapper), `theme.js` (early theme blocker).
+- **Build/Run/Test Systems**: Fully static; no build step, no NPM dependencies. Runs directly in browser. GitHub Pages deployment via source sync. No automated test suite.
+- **Architectural Style**: Client-side monolithic architecture with Service Worker caching for PWA offline capabilities. Data parsing is offloaded to a Web Worker (`json-worker.js`) via asynchronous stream processing to avoid main-thread blocking.
+- **Major Operational Invariants**: Strict offline support, 5MB file size limit for imports, client-side only (no backend), single source of truth for UI variables (`:root`).
 
 ## Repository Map
-```
-.
-├── app.js
+```text
+PMQuiz/
 ├── index.html
-├── json-worker.js
+├── app.js
 ├── service-worker.js
+├── json-worker.js
 ├── style.css
 ├── theme.js
 ├── manifest.webmanifest
-├── README.md
-├── CLAUDE.md
+├── QuestionBanks/
+│   ├── PMP_1_StakeholderPerformance.json
+│   └── [7 other PMP domain JSON files...]
+├── icons/
+│   ├── icon-192.png
+│   └── icon-512.png
 ├── .jules/
 │   └── steward.md
-├── QuestionBanks/    [8 JSON files excluded]
-└── icons/            [2 PNG files excluded]
+├── CLAUDE.md
+└── README.md
 ```
 
 ## Authoritative Review Summary
-- **Core flows**:
-  - App startup: `index.html` loads, `theme.js` blocks rendering to prevent FOUC, `app.js` instantiates `QuizManager`, registers Service Worker.
-  - Data Loading: Fetch/upload -> `json-worker.js` streams, limits to 5MB, validates, returns chunks -> `app.js` populates memory.
-  - Offline availability: Service worker intercepts requests, caches JSON with stale-while-revalidate, and shell/fonts with cache-first.
-- **Important interfaces**: `QuizManager` DOM cache and event bindings. Web Worker `message` passing (`meta`, `chunk`, `done`, `error`).
-- **Key configs**: `QUIZ_CONFIG` in `app.js` (5MB limits, question banks). `CACHE_NAME` in `service-worker.js`.
-- **Major invariants**:
-  - DOM manipulations must use `textContent`/`document.createElement` (no `innerHTML`) for XSS safety.
-  - Data parsing uses streams and size constraints to prevent memory exhaustion (DoS).
-  - Strict Content-Security-Policy.
-- **Principal risks**:
-  - Cache synchronization (stale data if Service Worker eviction behaves unexpectedly).
-  - Worker messaging race conditions if user repeatedly clicks upload.
-  - Accessibility gaps with frequent dynamic DOM updates.
+- **Core Flows**:
+  - Bootstrap & Theme: `theme.js` blocks render to prevent FOUC.
+  - PWA Lifecycle: `service-worker.js` caches shell immediately. Runtime caches are populated during initial fetches for JSON banks.
+  - Quiz Load: `app.js` handles file uploads/dropdown selections. Delegates heavy lifting to `json-worker.js` using `TransformStream`.
+  - Quiz Session: Timer managed in `app.js` via `requestAnimationFrame` and delta-time (not `setInterval`). Answers collected, reviewed, and cached.
+- **Important Interfaces**: `QuizManager` class (event orchestration, state), JSON Worker message protocol (`processStream`, `meta`, `chunk`, `done`).
+- **Key Configs**: `QUIZ_CONFIG` in `app.js` controls domains, file limits, UI classes. `manifest.webmanifest` manages PWA attributes. CSP is strictly defined in `index.html`.
+- **Major Invariants**:
+  - Validation offloaded to `json-worker.js` before UI state mutation.
+  - CSP `style-src` prevents inline `style` attributes.
+  - Single source of truth for runtime cache eviction via custom `trimCache`.
+- **Principal Risks**:
+  - Out-of-memory crashes on enormous custom JSON payloads without stream processing (mitigated by 5MB worker limit).
+  - Service Worker update delays causing stale logic to be executed.
 
 ## File Inventory
 | Path | Role | Priority | Inclusion | Reason |
 |---|---|---|---|---|
-| `app.js` | Main Application Logic | Critical | Full | Core business logic, state, and UI bindings. |
-| `index.html` | Entry Point / App Shell | Critical | Full | Network boundaries (CSP), layout, entry point. |
-| `json-worker.js` | Background Data Processor | Critical | Full | Data validation, concurrency, DoS protection. |
-| `service-worker.js` | PWA Offline Manager | Critical | Full | Caching strategies, network interceptor. |
-| `style.css` | Global Styling | Important | Full | UX/accessibility, mobile physics, print styles. |
-| `theme.js` | Theme Initialization | Important | Full | Anti-FOUC logic and visual invariants. |
-| `manifest.webmanifest` | PWA Metadata | Important | Full | App installation context, shortcuts. |
-| `.jules/steward.md` | Architecture Decisions | Important | Summary | Design principles, security insights, and operational rules. |
-| `README.md` | Project Documentation | Context | Summary | User-facing summary and features. |
-| `CLAUDE.md` | Developer Guidelines | Context | Summary | Development instructions and architectural overview. |
-| `QuestionBanks/*.json` | Data Store | Context | Excluded | Repetitive data schemas represented elsewhere. |
-| `icons/*` | Static Assets | Context | Excluded | Binary images with no behavioral significance. |
-| `LICENSE` | Legal Boilerplate | Context | Excluded | Standard open-source license. |
-| `.gitignore` | Git Configuration | Context | Excluded | Low-risk boilerplate. |
-| `.nojekyll` | Hosting Config | Context | Excluded | Zero-byte flag file for GitHub Pages. |
+| `index.html` | UI Shell & Entry | Critical | Full | Defines CSP, layout, preload behavior |
+| `app.js` | Core Logic | Critical | Full | State, events, timer, worker coordination |
+| `json-worker.js` | Async Parsing/Validation | Critical | Full | Input bounds, uniqueness, parsing |
+| `service-worker.js` | Offline Capabilities | Critical | Full | Caching strategies, LRU implementation |
+| `theme.js` | Early Render Block | Important | Full | Prevents FOUC, theme application |
+| `manifest.webmanifest` | PWA Metadata | Context | Full | Routing shortcuts, app setup |
+| `style.css` | UI Polish / Variables | Context | Excerpt | Focuses on CSS specific properties for mobile/print/a11y |
+| `README.md` | Public Context | Context | Summary | Top-level project description |
+| `CLAUDE.md` | Development Guide | Context | Summary | Explains architecture / tasks |
+| `.jules/steward.md` | Internal Rules | Context | Summary | Historical security / perf insights |
+| `QuestionBanks/*.json` | Static Content | Context | Excluded | Repetitive quiz questions |
+| `icons/*.png` | Assets | Context | Excluded | Binary image files |
 
 ## Embedded Critical Files
 
-### `app.js`
-- **Role**: Main Application Logic
-- **Why it matters**: Core business logic, state, and UI bindings.
-- **Inclusion mode**: Full
+### `index.html`
+- **Role**: Main UI template and initial dependency loader.
+- **Why it matters**: Houses strict CSP, critical metadata, and primary DOM structure required by `app.js`.
+- **Inclusion Mode**: Full
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:;">
+    <title>PM Certification Quiz - Free Practice</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="app.js" as="script">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Free project management certification exam practice with quizzes covering all 8 performance domains. Study offline with timed questions and detailed explanations.">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8f9fa">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PM Quiz">
 
-```js
+    <!-- Social Sharing Metadata -->
+    <meta property="og:title" content="PM Certification Quiz - Free Practice">
+    <meta property="og:description" content="Free project management certification exam practice with quizzes covering all 8 performance domains. Study offline with timed questions.">
+    <meta property="og:image" content="./icons/icon-512.png">
+    <meta property="og:url" content=".">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:image" content="./icons/icon-512.png">
+
+    <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512.png">
+    <link rel="icon" type="image/png" href="./icons/icon-192.png">
+    <!--
+      NOTE: When deploying to GitHub Pages, all asset paths (manifest, icons, service worker)
+      must be relative to the repo root. This ensures correct loading when the site is
+      served from a subdirectory.
+    -->
+</head>
+<body>
+    <header class="d-flex align-items-center py-2 px-3 bg-transparent">
+        <div class="flex-grow-1"></div> <!-- Left spacer -->
+        <h1 class="h4 mb-0">PM Certification Quiz</h1> <!-- Centered title -->
+        <div class="flex-grow-1 d-flex"> <!-- Right spacer with button -->
+            <button id="themeToggleBtn" class="btn ms-auto" aria-pressed="false" aria-label="Toggle day/night mode">
+                <span id="themeToggleIcon" aria-hidden="true">
+                    <i id="iconSun" class="bi bi-sun"></i>
+                    <i id="iconMoon" class="bi bi-moon"></i>
+                </span>
+            </button>
+        </div>
+    </header>
+    <main class="container py-4 quiz-container" role="main">
+        <section id="uploadSection" class="card p-4 mb-4 fade-in" tabindex="-1">
+            <h2 class="mb-4 text-center">Load Quiz Questions</h2>
+
+            <form id="selectBankForm" class="mb-3">
+                <div class="mb-3">
+                    <label for="questionBankSelect" class="form-label">Option 1: Select Question Bank</label>
+                    <select id="questionBankSelect" class="form-select" aria-describedby="selectHelp">
+                        </select>
+                    <div id="selectHelp" class="form-text">Choose a predefined question bank.</div>
+                </div>
+                <button type="submit" id="startFromSelectBtn" class="btn btn-success w-100">Start Quiz from Selection</button>
+            </form>
+
+            <div class="divider-text">OR</div>
+
+            <form id="uploadForm" class="mb-3">
+                <div class="mb-3">
+                    <label for="jsonFile" class="form-label">Option 2: Upload JSON File</label>
+                    <input type="file" id="jsonFile" class="form-control" accept=".json" aria-describedby="fileHelp">
+                    <div id="fileHelp" class="form-text">Select a quiz file in JSON format from your device.</div>
+                </div>
+                <button type="submit" id="startFromFileBtn" class="btn btn-primary w-100">Start Quiz from File</button>
+            </form>
+
+            <div id="jsonLoadError" class="text-danger mt-3" role="alert" aria-live="assertive"></div>
+            <div id="loadingIndicator" class="d-none text-center mt-3" role="status">
+                <div class="loading-spinner" aria-hidden="true"></div>
+                <p>Loading quiz...</p>
+            </div>
+        </section>
+
+        <section id="quizInterface" class="d-none fade-in" aria-labelledby="quizTopic" tabindex="-1">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h3 id="quizTopic" class="mb-0 h4"></h3>
+                <div class="score-display" aria-live="polite">
+                    <div class="d-flex justify-content-between">
+                        <span class="progress-label">Score:</span>
+                        <span>
+                            <strong id="currentScoreValue">0</strong>/<span id="totalQuestions">0</span>
+                            (<strong id="currentScorePercentage">0</strong>%)
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-container" aria-label="Quiz Progress">
+                <div class="flex-grow-1">
+                    <div class="progress mb-1 progress-sm">
+                        <div id="progressBar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                             <span class="visually-hidden">Quiz progress</span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small id="questionProgressText">Question <span id="currentQuestionNum">0</span> of <span id="totalQuestionsDisplay">0</span></small>
+                        <small id="timer" class="text-muted" role="timer">Time left: 0s</small>
+                    </div>
+                </div>
+            </div>
+
+            <div id="questionContainer" class="card p-4 mb-4" aria-live="polite" aria-atomic="true">
+                </div>
+            <div id="explanationContainer" class="explanation-box d-none" aria-live="polite" aria-atomic="true">
+                </div>
+
+            <button id="finishQuizBtn" class="btn btn-info w-100 mt-4">Finish Quiz & See Results</button>
+            <button id="resetQuizDuringQuizBtn" class="btn btn-danger w-100 mt-2">Reset Quiz & Load New</button>
+
+        </section>
+
+        <section id="resultsSection" class="d-none card p-4 fade-in" aria-labelledby="resultsHeading" tabindex="-1">
+            <h2 id="resultsHeading" class="mb-4 text-center">Quiz Results</h2>
+            <div class="mb-4" aria-live="polite">
+                <div class="d-flex justify-content-between mb-2">
+                    <h4 class="mb-0 h5">Final Score:</h4>
+                    <h4 class="mb-0 h5">
+                        <strong id="finalScoreValue">0</strong>/<span id="finalTotalQuestions">0</span>
+                        (<strong id="finalScorePercentage">0</strong>%)
+                    </h4>
+                </div>
+                <div class="progress mt-3 position-relative progress-lg" aria-label="Final score percentage">
+                    <div id="finalPercentageBar" class="progress-bar" role="progressbar"></div>
+                    <div id="finalPercentageText" class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center">0%</div>
+                </div>
+            </div>
+            <button id="reviewBtn" class="btn btn-info mb-3 w-100">Review Answers</button>
+            <button id="restartQuizBtnResults" class="btn btn-primary w-100">Take New Quiz</button> </section>
+
+        <section id="reviewSection" class="d-none card p-4 fade-in" aria-labelledby="reviewHeading" tabindex="-1">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 id="reviewHeading" class="mb-0 h3">Answer Review</h2>
+                <div class="score-display">
+                    <div class="d-flex justify-content-between">
+                        <span class="progress-label">Final Score:</span>
+                        <span>
+                            <strong id="reviewScoreValue">0</strong>/<span id="reviewTotalQuestions">0</span>
+                            (<strong id="reviewScorePercentage">0</strong>%)
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reviewFilterControls" class="d-flex justify-content-center gap-2 mb-3" role="group" aria-label="Review Filters">
+                <button id="reviewFilterAll" class="btn btn-sm btn-primary" aria-pressed="true">Show All</button>
+                <button id="reviewFilterIncorrect" class="btn btn-sm btn-outline-primary" aria-pressed="false">Show Incorrect Only</button>
+            </div>
+
+            <div id="reviewQuestionsContainer" aria-live="polite">
+                </div>
+            <button id="restartQuizBtnReview" class="btn btn-primary mt-4 w-100">Take New Quiz</button> </section>
+    </main>
+
+    <footer class="text-center mt-4 mb-4 text-muted small">v1.3.61</footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
+```
+
+### `app.js`
+- **Role**: Core application state machine.
+- **Why it matters**: Contains the `QuizManager` class, handles input handling, timer logic, DOM updates, and web worker initialization.
+- **Inclusion Mode**: Full
+```javascript
 // --- Configuration Object ---
 const QUIZ_CONFIG = Object.freeze({
     CSS_CLASSES: {
@@ -119,6 +297,27 @@ const QUIZ_CONFIG = Object.freeze({
     ]
 });
 
+function isDebugMode() {
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1';
+}
+
+function reportWarning(message, error) {
+    if (isDebugMode() && error) {
+        console.warn(message, error);
+        return;
+    }
+    console.warn(message);
+}
+
+function reportError(message, error) {
+    if (isDebugMode() && error) {
+        console.error(message, error);
+        return;
+    }
+    console.error(message);
+}
+
 // --- QuizManager Class ---
 class QuizManager {
     constructor() {
@@ -166,7 +365,7 @@ class QuizManager {
                 }, 100);
             }
         } catch (e) {
-            console.warn('Shortcut handling failed:', e);
+            reportWarning('Shortcut handling failed.', e);
         }
     }
 
@@ -177,10 +376,13 @@ class QuizManager {
      */
     _processWithWorker(stream) {
         return new Promise((resolve, reject) => {
+            const taskId = Date.now().toString(36) + Math.random().toString(36).substring(2);
             const reconstructed = { questions: [] };
 
             const onMessage = (e) => {
-                const { type, data, message } = e.data;
+                const { type, data, message, taskId: responseTaskId } = e.data;
+                if (responseTaskId !== taskId) return;
+
                 if (type === 'meta') {
                     Object.assign(reconstructed, data);
                 } else if (type === 'chunk') {
@@ -215,6 +417,7 @@ class QuizManager {
 
             this.worker.postMessage({
                 type: 'processStream',
+                taskId: taskId,
                 stream: stream,
                 limit: QUIZ_CONFIG.MAX_FILE_SIZE,
                 config: {
@@ -319,7 +522,7 @@ class QuizManager {
                 option.disabled = !isOnline && !isCached;
             });
         } catch (e) {
-            console.warn('Cache check failed:', e);
+            reportWarning('Cache check failed.', e);
         }
     }
 
@@ -490,7 +693,7 @@ class QuizManager {
             this._processAndStartQuiz(jsonData, "file upload");
         } catch (error) {
             this._setLoadError(`Error reading file: ${error.message}`);
-            console.error("File Reading Error:", error);
+            reportError('File reading error.', error);
         } finally {
             this._setLoadingState(false);
             if (this.dom.uploadForm) this.dom.uploadForm.reset();
@@ -518,10 +721,16 @@ class QuizManager {
             return;
         }
 
+        const abortController = new AbortController();
+        const fetchTimeout = setTimeout(() => abortController.abort(), 15000);
+
         try {
-            const response = await fetch(sourceUrl);
+            const response = await fetch(sourceUrl, { signal: abortController.signal });
             if (!response.ok) {
                 throw new Error(`Failed to fetch from ${sourceType}: ${response.status} ${response.statusText}`);
+            }
+            if (!response.body) {
+                throw new Error(`Failed to read ${sourceType}: streaming is unavailable in this browser`);
             }
 
             // Use Worker to process stream (handles size limit, parsing, and non-blocking return)
@@ -537,10 +746,17 @@ class QuizManager {
 
             this._processAndStartQuiz(jsonData, sourceType);
         } catch (error) {
-            this._setLoadError(`Error fetching or processing from ${sourceType}: ${error.message}`);
-            console.error(`Error with ${sourceType}:`, error);
+            const isTimeout = error && error.name === 'AbortError';
+            const errorMessage = error instanceof Error ? error.message : 'Unexpected error.';
+            const friendlyMessage = isTimeout
+                ? `Request to ${sourceType} timed out. Please try again.`
+                : `Could not load quiz from ${sourceType}. ${errorMessage}`;
+
+            this._setLoadError(friendlyMessage);
+            reportError(`Error with ${sourceType}.`, error);
              this._showSection(this.dom.uploadSection); // Go back to upload on fetch error
         } finally {
+            clearTimeout(fetchTimeout);
             this._setLoadingState(false);
         }
     }
@@ -561,7 +777,7 @@ class QuizManager {
             this.startQuiz();
         } catch (error) {
             this._setLoadError(`Error processing quiz data (from ${sourceType}): ${error.message}`);
-            console.error(`Quiz Data Processing Error (from ${sourceType}):`, error);
+            reportError(`Quiz data processing error from ${sourceType}.`, error);
              this._showSection(this.dom.uploadSection);
         }
     }
@@ -769,14 +985,15 @@ class QuizManager {
         // Sentinel: Prevent double-answer state corruption and timer exploits
         if (this.userAnswers.length > this.currentQuestionIndex) return;
 
-        if (this.timerInterval) cancelAnimationFrame(this.timerInterval);
         const question = this.questions[this.currentQuestionIndex];
 
-        // Sentinel: Validate index to prevent out-of-bounds errors
-        if (selectedIndex !== -1 && (selectedIndex < 0 || selectedIndex >= question.choices.length)) {
-            console.error("Invalid choice index:", selectedIndex);
+        // Sentinel: Validate index to prevent out-of-bounds errors and NaN
+        if (selectedIndex !== -1 && (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex >= question.choices.length)) {
+            reportError(`Invalid choice index: ${selectedIndex}`);
             return;
         }
+
+        if (this.timerInterval) cancelAnimationFrame(this.timerInterval);
 
         const isCorrect = selectedIndex === question.correctAnswer;
 
@@ -908,7 +1125,7 @@ class QuizManager {
     _renderQuestion(question) {
         this.currentQuestionHeading = null;
         if (!question || !question.choices) {
-            console.error("Attempted to render invalid question:", question);
+            reportError('Attempted to render invalid question.');
             if (this.dom.questionContainer) {
                 this.dom.questionContainer.textContent = '';
                 const errorP = document.createElement('p');
@@ -1232,7 +1449,13 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.setAttribute('aria-pressed', 'false');
             if (themeMeta) themeMeta.content = '#f8f9fa';
         }
-        if (persist) localStorage.setItem(THEME_KEY, mode);
+        if (persist) {
+            try {
+                localStorage.setItem(THEME_KEY, mode);
+            } catch (e) {
+                // Fail silently if localStorage is blocked
+            }
+        }
     }
 
     // Initialize state based on what theme.js applied (eliminating FOUC)
@@ -1249,195 +1472,13 @@ document.addEventListener('DOMContentLoaded', () => {
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js').catch(() => {});
 }
-
-```
-
-### `index.html`
-- **Role**: Entry Point / App Shell
-- **Why it matters**: Network boundaries (CSP), layout, entry point.
-- **Inclusion mode**: Full
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:;">
-    <title>PM Certification Quiz - Free Practice</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="app.js" as="script">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="theme.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <meta name="description" content="Free project management certification exam practice with quizzes covering all 8 performance domains. Study offline with timed questions and detailed explanations.">
-    <link rel="manifest" href="./manifest.webmanifest">
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8f9fa">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="PM Quiz">
-
-    <!-- Social Sharing Metadata -->
-    <meta property="og:title" content="PM Certification Quiz - Free Practice">
-    <meta property="og:description" content="Free project management certification exam practice with quizzes covering all 8 performance domains. Study offline with timed questions.">
-    <meta property="og:image" content="./icons/icon-512.png">
-    <meta property="og:url" content=".">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:image" content="./icons/icon-512.png">
-
-    <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png">
-    <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512.png">
-    <link rel="icon" type="image/png" href="./icons/icon-192.png">
-    <!--
-      NOTE: When deploying to GitHub Pages, all asset paths (manifest, icons, service worker)
-      must be relative to the repo root. This ensures correct loading when the site is
-      served from a subdirectory.
-    -->
-</head>
-<body>
-    <header class="d-flex align-items-center py-2 px-3 bg-transparent">
-        <div class="flex-grow-1"></div> <!-- Left spacer -->
-        <h1 class="h4 mb-0">PM Certification Quiz</h1> <!-- Centered title -->
-        <div class="flex-grow-1 d-flex"> <!-- Right spacer with button -->
-            <button id="themeToggleBtn" class="btn ms-auto" aria-pressed="false" aria-label="Toggle day/night mode">
-                <span id="themeToggleIcon" aria-hidden="true">
-                    <i id="iconSun" class="bi bi-sun"></i>
-                    <i id="iconMoon" class="bi bi-moon"></i>
-                </span>
-            </button>
-        </div>
-    </header>
-    <main class="container py-4 quiz-container" role="main">
-        <section id="uploadSection" class="card p-4 mb-4 fade-in" tabindex="-1">
-            <h2 class="mb-4 text-center">Load Quiz Questions</h2>
-
-            <form id="selectBankForm" class="mb-3">
-                <div class="mb-3">
-                    <label for="questionBankSelect" class="form-label">Option 1: Select Question Bank</label>
-                    <select id="questionBankSelect" class="form-select" aria-describedby="selectHelp">
-                        </select>
-                    <div id="selectHelp" class="form-text">Choose a predefined question bank.</div>
-                </div>
-                <button type="submit" id="startFromSelectBtn" class="btn btn-success w-100">Start Quiz from Selection</button>
-            </form>
-
-            <div class="divider-text">OR</div>
-
-            <form id="uploadForm" class="mb-3">
-                <div class="mb-3">
-                    <label for="jsonFile" class="form-label">Option 2: Upload JSON File</label>
-                    <input type="file" id="jsonFile" class="form-control" accept=".json" aria-describedby="fileHelp">
-                    <div id="fileHelp" class="form-text">Select a quiz file in JSON format from your device.</div>
-                </div>
-                <button type="submit" id="startFromFileBtn" class="btn btn-primary w-100">Start Quiz from File</button>
-            </form>
-
-            <div id="jsonLoadError" class="text-danger mt-3" role="alert" aria-live="assertive"></div>
-            <div id="loadingIndicator" class="d-none text-center mt-3" role="status">
-                <div class="loading-spinner" aria-hidden="true"></div>
-                <p>Loading quiz...</p>
-            </div>
-        </section>
-
-        <section id="quizInterface" class="d-none fade-in" aria-labelledby="quizTopic" tabindex="-1">
-            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                <h3 id="quizTopic" class="mb-0 h4"></h3>
-                <div class="score-display" aria-live="polite">
-                    <div class="d-flex justify-content-between">
-                        <span class="progress-label">Score:</span>
-                        <span>
-                            <strong id="currentScoreValue">0</strong>/<span id="totalQuestions">0</span>
-                            (<strong id="currentScorePercentage">0</strong>%)
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="progress-container" aria-label="Quiz Progress">
-                <div class="flex-grow-1">
-                    <div class="progress mb-1 progress-sm">
-                        <div id="progressBar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                             <span class="visually-hidden">Quiz progress</span>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <small id="questionProgressText">Question <span id="currentQuestionNum">0</span> of <span id="totalQuestionsDisplay">0</span></small>
-                        <small id="timer" class="text-muted" role="timer">Time left: 0s</small>
-                    </div>
-                </div>
-            </div>
-
-            <div id="questionContainer" class="card p-4 mb-4" aria-live="polite" aria-atomic="true">
-                </div>
-            <div id="explanationContainer" class="explanation-box d-none" aria-live="polite" aria-atomic="true">
-                </div>
-
-            <button id="finishQuizBtn" class="btn btn-info w-100 mt-4">Finish Quiz & See Results</button>
-            <button id="resetQuizDuringQuizBtn" class="btn btn-danger w-100 mt-2">Reset Quiz & Load New</button>
-
-        </section>
-
-        <section id="resultsSection" class="d-none card p-4 fade-in" aria-labelledby="resultsHeading" tabindex="-1">
-            <h2 id="resultsHeading" class="mb-4 text-center">Quiz Results</h2>
-            <div class="mb-4" aria-live="polite">
-                <div class="d-flex justify-content-between mb-2">
-                    <h4 class="mb-0 h5">Final Score:</h4>
-                    <h4 class="mb-0 h5">
-                        <strong id="finalScoreValue">0</strong>/<span id="finalTotalQuestions">0</span>
-                        (<strong id="finalScorePercentage">0</strong>%)
-                    </h4>
-                </div>
-                <div class="progress mt-3 position-relative progress-lg" aria-label="Final score percentage">
-                    <div id="finalPercentageBar" class="progress-bar" role="progressbar"></div>
-                    <div id="finalPercentageText" class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center">0%</div>
-                </div>
-            </div>
-            <button id="reviewBtn" class="btn btn-info mb-3 w-100">Review Answers</button>
-            <button id="restartQuizBtnResults" class="btn btn-primary w-100">Take New Quiz</button> </section>
-
-        <section id="reviewSection" class="d-none card p-4 fade-in" aria-labelledby="reviewHeading" tabindex="-1">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 id="reviewHeading" class="mb-0 h3">Answer Review</h2>
-                <div class="score-display">
-                    <div class="d-flex justify-content-between">
-                        <span class="progress-label">Final Score:</span>
-                        <span>
-                            <strong id="reviewScoreValue">0</strong>/<span id="reviewTotalQuestions">0</span>
-                            (<strong id="reviewScorePercentage">0</strong>%)
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div id="reviewFilterControls" class="d-flex justify-content-center gap-2 mb-3" role="group" aria-label="Review Filters">
-                <button id="reviewFilterAll" class="btn btn-sm btn-primary" aria-pressed="true">Show All</button>
-                <button id="reviewFilterIncorrect" class="btn btn-sm btn-outline-primary" aria-pressed="false">Show Incorrect Only</button>
-            </div>
-
-            <div id="reviewQuestionsContainer" aria-live="polite">
-                </div>
-            <button id="restartQuizBtnReview" class="btn btn-primary mt-4 w-100">Take New Quiz</button> </section>
-    </main>
-
-    <footer class="text-center mt-4 mb-4 text-muted small">v1.3.56</footer>
-
-    <script src="app.js"></script>
-</body>
-</html>
-
 ```
 
 ### `json-worker.js`
-- **Role**: Background Data Processor
-- **Why it matters**: Data validation, concurrency, DoS protection.
-- **Inclusion mode**: Full
-
-```js
+- **Role**: Off-main-thread data processor.
+- **Why it matters**: Responsible for streaming data, enforcing the 5MB size limit, parsing, and validating schema to prevent UI blocking.
+- **Inclusion Mode**: Full
+```javascript
 /*
  * Worker for processing JSON streams off the main thread.
  * Handles reading, size limit enforcement, decoding, parsing, AND validation.
@@ -1495,20 +1536,20 @@ function validateQuizData(jsonData, config) {
             uniqueChoices.add(trimmed);
         }
 
-        if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.choices.length) {
+        if (!Number.isInteger(q.correctAnswer) || q.correctAnswer < 0 || q.correctAnswer >= q.choices.length) {
             throw new Error(`Question ${qNum}: "correctAnswer" index is invalid or out of bounds.`);
         }
         if (typeof q.explanation !== 'string' || !q.explanation.trim()) {
             throw new Error(`Question ${qNum}: "explanation" must be a non-empty string.`);
         }
-        if (q.hasOwnProperty('time') && (typeof q.time !== 'number' || q.time <= 0)) {
+        if (q.hasOwnProperty('time') && (!Number.isFinite(q.time) || q.time <= 0)) {
             throw new Error(`Question ${qNum}: If "time" is present, it must be a positive number.`);
         }
     }
 }
 
 self.onmessage = async (e) => {
-    const { type, stream, limit, config } = e.data;
+    const { type, stream, limit, config, taskId } = e.data;
 
     if (type === 'processStream') {
         try {
@@ -1544,34 +1585,32 @@ self.onmessage = async (e) => {
 
             // Send metadata (excluding questions array)
             const { questions, ...meta } = data;
-            self.postMessage({ type: 'meta', data: meta });
+            self.postMessage({ type: 'meta', taskId, data: meta });
 
             // Send questions in chunks to allow UI updates between batches
             if (questions && Array.isArray(questions)) {
                 const chunkSize = 500;
                 for (let i = 0; i < questions.length; i += chunkSize) {
                     const chunk = questions.slice(i, i + chunkSize);
-                    self.postMessage({ type: 'chunk', data: chunk });
+                    self.postMessage({ type: 'chunk', taskId, data: chunk });
                 }
             }
 
-            self.postMessage({ type: 'done' });
+            self.postMessage({ type: 'done', taskId });
 
         } catch (error) {
-            self.postMessage({ type: 'error', message: error.message });
+            self.postMessage({ type: 'error', taskId, message: error.message });
         }
     }
 };
-
 ```
 
 ### `service-worker.js`
-- **Role**: PWA Offline Manager
-- **Why it matters**: Caching strategies, network interceptor.
-- **Inclusion mode**: Full
-
-```js
-const CACHE_NAME = 'selfquiz-cache-v1.3.56';
+- **Role**: PWA caching engine.
+- **Why it matters**: Implements Stale-While-Revalidate and Cache First strategies, along with LRU cache eviction logic (`trimCache`).
+- **Inclusion Mode**: Full
+```javascript
+const CACHE_NAME = 'selfquiz-cache-v1.3.61';
 const ASSETS = [
   './',
   './index.html',
@@ -1683,14 +1722,102 @@ self.addEventListener('fetch', event => {
     caches.match(event.request).then(response => response || fetch(event.request))
   );
 });
+```
 
+### `theme.js`
+- **Role**: Render-blocking theme initialization.
+- **Why it matters**: Reads `localStorage` synchronously to prevent Flash of Unstyled Content (FOUC).
+- **Inclusion Mode**: Full
+```javascript
+// Immediately Invoked Function Expression to prevent global namespace pollution
+(function() {
+    try {
+        const THEME_KEY = 'pm-cert-quiz-theme';
+        const saved = localStorage.getItem(THEME_KEY);
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        const isDarkMode = saved === 'dark' || (!saved && systemDark);
+
+        // If saved is 'dark', or if no saved preference and system is dark
+        if (isDarkMode) {
+            document.documentElement.classList.add('dark-mode');
+        }
+
+        // Palette: Consolidate meta theme-color tags to enforce single source of truth, regardless of saved preference
+        const metas = document.querySelectorAll('meta[name="theme-color"]');
+        if (metas.length > 0) {
+            const primary = metas[0];
+            primary.content = isDarkMode ? '#000000' : '#f8f9fa';
+            primary.removeAttribute('media');
+
+            // Sentinel: Remove duplicate/conflicting meta tags
+            for (let i = 1; i < metas.length; i++) {
+                metas[i].remove();
+            }
+        }
+    } catch (e) {
+        // Fail silently if localStorage access is blocked or other errors occur
+        const host = window.location.hostname;
+        if (host === 'localhost' || host === '127.0.0.1') {
+            console.error('Theme initialization error:', e);
+        } else {
+            console.error('Theme initialization error.');
+        }
+    }
+})();
+```
+
+### `manifest.webmanifest`
+- **Role**: Defines PWA behavior.
+- **Why it matters**: Provides entry points, shortcuts, and theme colors required for native app-like installation.
+- **Inclusion Mode**: Full
+```json
+{
+  "name": "PM Certification Quiz",
+  "short_name": "PM Quiz",
+  "description": "Free Project Management Certification Practice - All 8 Performance Domains",
+  "start_url": "./?source=pwa",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#8E24AA",
+  "orientation": "portrait",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Upload Quiz",
+      "short_name": "Upload",
+      "description": "Upload a custom question bank",
+      "url": "./?shortcut=upload",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Select Bank",
+      "short_name": "Select",
+      "description": "Choose a predefined question bank",
+      "url": "./?shortcut=select",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
 ```
 
 ### `style.css`
-- **Role**: Global Styling
-- **Why it matters**: UX/accessibility, mobile physics, print styles.
-- **Inclusion mode**: Full
-
+- **Role**: Application styling.
+- **Why it matters**: Holds UI CSS variables, mobile-specific touch logic, accessible outline styles, and print media rules.
+- **Inclusion Mode**: Excerpt
+- **Note**: Excerpts focus on critical design rules (`:root`, `.dark-mode`, touch manipulation, a11y focus rings, and print media).
 ```css
 :root {
     /* Light Mode Variables (Default) */
@@ -1739,360 +1866,36 @@ self.addEventListener('fetch', event => {
     --focus-ring-color: #FFCA28;
     --card-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
-/* Specific Dark Mode Overrides */
-.dark-mode .text-muted,
-.dark-mode .form-text,
-.dark-mode small,
-.dark-mode .progress-label,
-.dark-mode .card-title,
-.dark-mode label,
-.dark-mode .form-label {
-    color: var(--secondary-text-color) !important;
-    opacity: 1 !important;
-}
 
-html, body, .dark-mode html, .dark-mode body {
-    background: var(--primary-background) !important;
-    color: var(--primary-text-color);
-    font-family: var(--bs-body-font-family);
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
 /* Mobile Physics: Prevent double-tap zoom on interactive elements */
 a, .btn, .choice-btn, input, select, textarea, button, label {
     touch-action: manipulation;
 }
-body {
-    min-height: 100vh;
-}
-.quiz-container {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 1rem;
-}
-.card {
-    background: var(--secondary-background);
-    color: var(--primary-text-color);
-    border-radius: var(--border-radius);
-    box-shadow: var(--card-shadow);
-    border: none;
-}
-.score-display {
-    background: var(--tertiary-background);
-    color: var(--primary-text-color);
-    border-radius: var(--border-radius);
-    padding: 10px 15px;
-    text-align: center;
-    min-width: 220px;
-    border: 1px solid var(--secondary-background);
-}
-.progress-container {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-.progress-label {
-    font-weight: 600;
-    color: var(--secondary-text-color);
-}
-.progress {
-    background: var(--tertiary-background);
-    border-radius: 6px;
-}
-.progress-bar {
-    background: var(--primary-purple-accent);
-    color: var(--primary-purple-text);
-    font-weight: 600;
-    transition: transform 0.5s;
-    transform-origin: left;
-    will-change: transform;
-}
-.divider-text {
-    text-align: center;
-    margin: 1rem 0;
-    font-weight: 500;
-    color: var(--secondary-text-color);
-}
-.explanation-box {
-    background: var(--tertiary-background);
-    border-radius: var(--border-radius);
-    padding: 15px;
-    margin-top: 20px;
-    color: var(--primary-text-color);
-    box-shadow: var(--card-shadow);
-}
-.choice-btn {
-    background: var(--secondary-background);
-    color: var(--primary-text-color);
-    border: 1px solid var(--tertiary-background);
-    border-radius: var(--border-radius);
-    text-align: left !important;
-    padding: 0.75rem 1rem !important;
-    font-weight: 500;
-    transition: all 0.2s ease-in-out;
-    outline: none;
-    touch-action: manipulation;
-    white-space: normal;
-    word-wrap: break-word;
-}
-.choice-btn:hover:not(:disabled) {
-    background: var(--primary-purple-hover);
-    color: var(--primary-purple-text);
-    transform: translateY(-2px) scale(1.01);
-}
-.choice-btn:active {
-    background: var(--primary-purple-active);
-    color: var(--primary-purple-text);
-}
-.choice-btn:focus-visible {
-    outline: 2.5px solid var(--focus-ring-color);
-    outline-offset: 2px;
-    box-shadow: 0 0 0 3px var(--focus-ring-color);
-}
-.choice-btn.correct-answer {
-    background: var(--secondary-emerald-accent);
-    color: var(--secondary-emerald-text);
-    border-color: var(--secondary-emerald-accent);
-}
-.choice-btn.incorrect-answer {
-    background: var(--danger-red-accent);
-    color: var(--danger-red-text);
-    border-color: var(--danger-red-accent);
-}
-.choice-btn.user-selected.incorrect-answer {
-    opacity: 0.7;
-}
-.btn {
-    font-weight: 600;
-    border-radius: var(--border-radius);
-    letter-spacing: 0.02em;
-    transition: all 0.2s;
-    outline: none;
-    touch-action: manipulation;
-    white-space: normal;
-    overflow-wrap: break-word;
-}
-.btn-primary {
-    background: var(--primary-purple-accent);
-    border-color: var(--primary-purple-accent);
-    color: var(--primary-purple-text);
-}
-.btn-primary:hover, .btn-primary:focus {
-    background: var(--primary-purple-hover);
-    border-color: var(--primary-purple-hover);
-    color: var(--primary-purple-text);
-}
-.btn-primary:active {
-    background: var(--primary-purple-active);
-    border-color: var(--primary-purple-active);
-}
-.btn-success {
-    background: var(--secondary-emerald-accent);
-    border-color: var(--secondary-emerald-accent);
-    color: var(--secondary-emerald-text);
-}
-.btn-success:hover, .btn-success:focus {
-    background: var(--secondary-emerald-hover);
-    border-color: var(--secondary-emerald-hover);
-}
-.btn-success:active {
-    background: var(--secondary-emerald-active);
-    border-color: var(--secondary-emerald-active);
-}
-.btn-info {
-    background: var(--highlight-gold-accent);
-    border-color: var(--highlight-gold-accent);
-    color: var(--highlight-gold-text);
-}
-.btn-info:hover, .btn-info:focus {
-    background: #ffd95a;
-    border-color: #ffd95a;
-    color: var(--highlight-gold-text);
-}
-.btn-info:active {
-    background: #e6b800;
-    border-color: #e6b800;
-}
-.btn-danger {
-    background: var(--danger-red-accent);
-    border-color: var(--danger-red-accent);
-    color: var(--danger-red-text);
-}
-.btn-danger:hover, .btn-danger:focus {
-    background: #b71c1c;
-    border-color: #b71c1c;
-}
-.btn-danger:active {
-    background: #8b1818;
-    border-color: #8b1818;
-}
-.loading-spinner {
-    border: 4px solid var(--tertiary-background);
-    border-top: 4px solid var(--primary-purple-accent);
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    animation: spin 1s linear infinite;
-    margin: 20px auto;
-}
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.d-none { display: none !important; }
-/* Scrollbar styling for WebKit browsers */
-::-webkit-scrollbar {
-    width: 10px;
-    background: var(--secondary-background);
-}
-::-webkit-scrollbar-thumb {
-    background: var(--secondary-text-color);
-    border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-purple-accent);
-}
-/* Headings and typography */
-h1, h2, h3, h4, h5, h6 {
-    color: var(--primary-text-color);
-    font-weight: 700;
-    letter-spacing: 0.02em;
-}
-.card-title, label, .form-label, .form-text, small, .progress-label {
-    color: var(--secondary-text-color);
-}
-.text-muted, small, .form-text {
-    color: var(--secondary-text-color) !important;
-    opacity: 1 !important;
-}
+
 /* Accessibility: focus ring for all interactive elements */
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
     outline: 2.5px solid var(--focus-ring-color) !important;
     outline-offset: 2px !important;
     box-shadow: 0 0 0 3px var(--focus-ring-color) !important;
 }
-/* Animation for fade-in */
-.fade-in { animation: fadeInAnimation 0.2s ease-in; }
-@keyframes fadeInAnimation { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* Theme Toggle Styles */
-/* Default (Light) */
-#themeToggleBtn .bi {
-    color: var(--primary-purple-accent) !important;
-    transition: color 0.2s;
-}
-#themeToggleBtn {
-    background: var(--secondary-background) !important;
-    border: 1.5px solid var(--primary-purple-accent) !important;
-}
-
-/* Dark Mode Override */
-.dark-mode #themeToggleBtn .bi {
-    color: var(--highlight-gold-accent) !important;
-}
-.dark-mode #themeToggleBtn {
-    background: var(--secondary-background) !important;
-    border: 1.5px solid var(--highlight-gold-accent) !important;
-}
-
-#themeToggleBtn:focus-visible {
-    outline: 2.5px solid var(--focus-ring-color) !important;
-    outline-offset: 2px !important;
-    box-shadow: 0 0 0 3px var(--focus-ring-color) !important;
-}
-
-/* Accessibility overrides for text colors to ensure WCAG AA compliance */
-/* Default (Light Mode) */
-.text-success { color: #146c43 !important; }
-.text-danger { color: #b02a37 !important; }
-
-/* Dark Mode Overrides */
-.dark-mode .text-success { color: #66BB6A !important; }
-.dark-mode .text-danger { color: #EF9A9A !important; }
 
 /* Bolt Optimization: Virtualize rendering for long review lists */
 .review-card {
     content-visibility: auto;
     contain-intrinsic-size: 1px 300px;
 }
-.hidden-by-filter {
-    display: none !important;
-}
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-    *, ::before, ::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-    }
-}
-
-/* --- Extracted Inline Styles --- */
-
-.bg-transparent {
-    background: transparent !important;
-}
-#themeToggleBtn {
-    min-width: 44px;
-}
-#iconSun {
-    font-size: 1.5rem;
-    display: inline;
-}
-#iconMoon {
-    font-size: 1.5rem;
-    display: none;
-}
-.dark-mode #iconSun {
-    display: none;
-}
-.dark-mode #iconMoon {
-    display: inline;
-}
-.progress-sm {
-    height: 10px;
-}
-.progress-lg {
-    height: 25px;
-}
-#progressBar {
-    width: 100%;
-    transform: scaleX(0);
-}
-#finalPercentageBar {
-    width: 100%;
-    transform: scaleX(0);
-}
-#finalPercentageText {
-    top: 0;
-    left: 0;
-    font-weight: 600;
-    color: var(--primary-purple-text);
-    pointer-events: none;
-}
 
 /* Print Support */
 @media print {
-    /* Reset colors for ink saving */
     body, .card, .score-display, .explanation-box, .review-card {
         background: #ffffff !important;
         color: #000000 !important;
         box-shadow: none !important;
         border: 1px solid #ddd !important;
     }
-
-    /* Hide navigation and controls */
-    header.d-flex,
-    #themeToggleBtn,
-    .btn,
-    #uploadSection,
-    .progress-container,
-    #reviewFilterControls,
-    footer {
+    header.d-flex, #themeToggleBtn, .btn, #uploadSection, .progress-container, #reviewFilterControls, footer {
         display: none !important;
     }
-
-    /* Ensure review cards don't break awkwardly */
     .review-card {
         break-inside: avoid;
         page-break-inside: avoid;
@@ -2100,150 +1903,29 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         content-visibility: visible !important;
         contain-intrinsic-size: auto !important;
     }
-
-    /* Expand containers */
-    .quiz-container {
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
 }
-
-```
-
-### `theme.js`
-- **Role**: Theme Initialization
-- **Why it matters**: Anti-FOUC logic and visual invariants.
-- **Inclusion mode**: Full
-
-```js
-// Immediately Invoked Function Expression to prevent global namespace pollution
-(function() {
-    try {
-        const THEME_KEY = 'pm-cert-quiz-theme';
-        const saved = localStorage.getItem(THEME_KEY);
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-        // If saved is 'dark', or if no saved preference and system is dark
-        if (saved === 'dark' || (!saved && systemDark)) {
-            document.documentElement.classList.add('dark-mode');
-        }
-
-        // Palette: Force meta theme-color if user has a saved preference, overriding CSS media queries
-        if (saved) {
-             const metas = document.querySelectorAll('meta[name="theme-color"]');
-             if (metas.length > 0) {
-                 const primary = metas[0];
-                 primary.content = saved === 'dark' ? '#000000' : '#f8f9fa';
-                 primary.removeAttribute('media');
-
-                 // Sentinel: Remove duplicate/conflicting meta tags to enforce single source of truth
-                 for (let i = 1; i < metas.length; i++) {
-                     metas[i].remove();
-                 }
-             }
-        }
-    } catch (e) {
-        // Fail silently if localStorage access is blocked or other errors occur
-        console.error('Theme initialization error:', e);
-    }
-})();
-
-```
-
-### `manifest.webmanifest`
-- **Role**: PWA Metadata
-- **Why it matters**: App installation context, shortcuts.
-- **Inclusion mode**: Full
-
-```json
-{
-  "name": "PM Certification Quiz",
-  "short_name": "PM Quiz",
-  "description": "Free Project Management Certification Practice - All 8 Performance Domains",
-  "start_url": "./?source=pwa",
-  "display": "standalone",
-  "background_color": "#f8f9fa",
-  "theme_color": "#8E24AA",
-  "orientation": "portrait",
-  "categories": ["education", "productivity"],
-  "icons": [
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Upload Quiz",
-      "short_name": "Upload",
-      "description": "Upload a custom question bank",
-      "url": "./?shortcut=upload",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Select Bank",
-      "short_name": "Select",
-      "description": "Choose a predefined question bank",
-      "url": "./?shortcut=select",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
-    }
-  ]
-}
-
 ```
 
 ## Summarized Files
-
-### `.jules/steward.md`
-- **Purpose**: Records design decisions, security protocols, and operational learnings.
-- **Key content**:
-  - Requires `textContent` over `innerHTML` for XSS prevention.
-  - Requires 5MB limits and stream reading for DoS protection.
-  - Requires Service Worker persistence via explicit whitelisting in activation handlers.
-- **Omitted detail**: Exact prose of historical learnings.
-
-### `README.md` & `CLAUDE.md`
-- **Purpose**: Project description, tech stack overview, and AI assistant guidelines.
-- **Key symbols/modules**: Describes project structure, PWA behavior, format of QuestionBank JSONs.
-- **Omitted detail**: Standard feature lists and deployment instructions.
-
-### `QuestionBanks/*.json` (e.g., `PMP_1_StakeholderPerformance.json`)
-- **Purpose**: Contains the actual quiz questions for various domains.
-- **Key structure**: `{ "topic": string, "questions": [ { "questionText": string, "choices": string[], "correctAnswer": number, "explanation": string, "time": number } ] }`
-- **Notable dependencies**: Parsed by `json-worker.js`.
-- **Omitted detail**: Hundreds of question items excluded to save space.
+- **`README.md`**: Provides general overview, features (Offline Capable, Timed Practice, Dark Mode), and setup notes. States project version v1.3.61.
+- **`CLAUDE.md`**: Acts as AI development guidelines. Documents project structure, testing requirements, Git conventions, and PWA specific intricacies. Warns there is no build system.
+- **`.jules/steward.md`**: Extensive historical context log detailing protocols: strict 5MB fetch limits, CSP style requirements, single-pass memory operations, and LRU eviction nuances.
 
 ## Cross-File Relationships
-- **Startup wiring**: `index.html` loads `<head>` assets sequentially -> `theme.js` (blocking) -> CSS -> Body -> `app.js` (deferred execution on `DOMContentLoaded`).
-- **Module relationships**: `app.js` acts as the orchestrator. It offloads heavy parsing/validation to `json-worker.js` via `postMessage`. It registers `service-worker.js` for intercepting `fetch` requests.
-- **API/data flow**: User selects bank / uploads file -> `app.js` gets stream/url -> `service-worker.js` intercepts (if URL) -> `app.js` sends to `json-worker.js` -> Worker validates and chunks data -> `app.js` stores in memory `this.questions`.
-- **Config/env flow**: No environment variables. Configs are frozen globally in `app.js` (`QUIZ_CONFIG`).
-- **Test-to-implementation mapping**: No automated tests exist. Manual test plan outlined in `CLAUDE.md`.
+- **Startup Wiring**: `index.html` loads `theme.js` blockingly, then defers `app.js`. Service worker is registered at the bottom of `app.js`.
+- **Module Relationships**: Main thread (`app.js`) acts as the orchestrator. Offloads heavy parsing/validation to `json-worker.js`.
+- **API/Data Flow**: JSON fetched/uploaded -> Web Worker validates and chunks -> Main thread updates UI State -> Service worker caches source URL.
+- **Config/Env Flow**: `app.js` holds a frozen `QUIZ_CONFIG` object mapping static URLs from the `QuestionBanks` folder.
+- **Dependency Hotspots**: DOM manipulation heavily concentrated in `app.js`. Caching heavily concentrated in `service-worker.js`.
 
 ## Review Hotspots
-- **Correctness risks**:
-  - The LRU cache eviction logic in `service-worker.js` (`trimCache`) uses `Promise.all` which could fail partially.
-  - State synchronization between UI variables (`timeLeft`, `currentQuestionIndex`) and `requestAnimationFrame` timers in `app.js`.
-- **Security risks**:
-  - Even with `textContent`, `app.js` relies heavily on DOM manipulation. Any regression to using `innerHTML` introduces XSS vulnerabilities.
-  - CSP restricts `connect-src` to `'self'`, mitigating data exfiltration.
-- **Performance risks**:
-  - Repeated DOM additions in `_showFeedback` and `showReview` could impact low-end mobile devices, though `document.createDocumentFragment` is used.
-- **State/concurrency risks**:
-  - The Service Worker and Web Worker execute asynchronously. Terminating the SW during a `put` could corrupt the Cache API.
-- **UX/accessibility risks**:
-  - Screen reader announcements (`aria-live`) on rapidly changing elements (timers) are explicitly avoided (noted in `steward.md`), but focus management between questions could drop users.
+- **Security Risks**: Uploaded JSON is strictly parsed and checked by worker limits, reducing XSS or memory attacks. CSP prevents dynamic styling, verified inside `index.html`.
+- **Performance Risks**: Overly large question banks can lag the review interface. Mitigated by CSS `content-visibility` on `.review-card`.
+- **State/Concurrency Risks**: Rapid clicking on answers or timer race conditions. Handled via `.length` array checking and delta-time loop processing.
+- **Error-handling gaps**: Silent fallback on blocked `localStorage` in `theme.js`.
+- **UX/Accessibility**: Focus rings and specific ARIA tags managed by state manually in `app.js` (e.g., `role="timer"` vs `aria-live`).
 
 ## Packaging Notes
-- **Exclusions**: Ignored `.gitignore`, `LICENSE`, `.nojekyll` as low-signal boilerplate. Ignored `icons/` binary files. Ignored `QuestionBanks/` repetitive JSON payloads.
-- **Compression decisions**: The codebase is very small. All logic files (`app.js`, `service-worker.js`, `json-worker.js`) are included in `Full` because they are tightly coupled and easily fit within standard token limits. Summarized documentation.
-- **Fidelity limits**: Visual fidelity relies on external Bootstrap CDNs which are not embedded. The specific questions in the JSON banks are not present for review.
-- **Missing/unreadable content**: None. All core code was readable and packaged.
-- **Downstream review confidence**: High. The code is complete, self-contained, and perfectly reflects the operational application minus static question data.
+- **Exclusions**: Binary assets (`icons/*.png`) and repetitive JSON question banks (`QuestionBanks/*.json`) were omitted as they provide no structural/behavioral signal.
+- **Compression**: `style.css` was heavily excerpted to ignore repetitive Bootstrap-like overrides and pure layout adjustments, retaining core mechanics.
+- **Fidelity limits**: Because this repo runs natively in browser without a build step, `package.json` does not exist and is entirely absent.
